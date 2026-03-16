@@ -19,7 +19,8 @@
 		getErrorSolutions,
 		type ErrorSolutionResponse,
 		type TrainingMethod,
-		type TestTimeMethod
+		type TestTimeMethod,
+		type CitationInfo
 	} from '$lib/apis/analysis';
 
 	const i18n = getContext('i18n');
@@ -224,9 +225,60 @@
 	let currentSolutions: ErrorSolutionResponse | null = null;
 	let loadingSolutions: boolean = false;
 	let solutionsError: string | null = null;
-	let selectedCategory: string | null = null; // For filtering training methods
-	let selectedTestTimeCategory: string | null = null; // For filtering test-time methods
+
 	let activeMethodTab: 'test_time' | 'training' = 'test_time'; // Tab for method type selection
+
+	// Citation popover state
+	let activeCitationPopover: string | null = null; // unique ID for the currently open popover
+
+	/**
+	 * Get the URL for a citation (prefer DOI, fallback to URL/arXiv)
+	 */
+	function getCitationUrl(citation: CitationInfo): string {
+		if (citation.doi) {
+			return `https://doi.org/${citation.doi}`;
+		}
+		if (citation.url) {
+			return citation.url;
+		}
+		if (citation.eprint && citation.archiveprefix?.toLowerCase() === 'arxiv') {
+			return `https://arxiv.org/abs/${citation.eprint}`;
+		}
+		return '';
+	}
+
+	/**
+	 * Format venue name for display (shorten long venue names)
+	 */
+	function formatVenue(citation: CitationInfo): string {
+		const venue = citation.venue;
+		if (!venue) {
+			if (citation.archiveprefix?.toLowerCase() === 'arxiv') return 'arXiv';
+			return '';
+		}
+		// Common venue abbreviations
+		const abbrevs: Record<string, string> = {
+			'Proceedings of the AAAI Conference on Artificial Intelligence': 'AAAI',
+			'Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing': 'EMNLP 2025',
+			'Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing': 'EMNLP 2024',
+			'Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing': 'EMNLP 2023',
+			'Findings of the Association for Computational Linguistics: EMNLP 2023': 'Findings of EMNLP 2023',
+			'Findings of the Association for Computational Linguistics: NAACL 2025': 'Findings of NAACL 2025',
+			'Findings of the Association for Computational Linguistics: ACL 2025': 'Findings of ACL 2025',
+			'Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)': 'ACL 2025',
+			'Proceedings of the 48th International ACM SIGIR Conference on Research and Development in Information Retrieval': 'SIGIR 2025',
+			'Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V.2': 'KDD 2025'
+		};
+		return abbrevs[venue] || venue;
+	}
+
+	/**
+	 * Toggle the citation details popover
+	 */
+	function toggleCitationPopover(methodName: string, citationIndex: number) {
+		const id = `${methodName}-${citationIndex}`;
+		activeCitationPopover = activeCitationPopover === id ? null : id;
+	}
 
 	// Fallback static solutions (used when API is unavailable)
 	const FALLBACK_SOLUTIONS: Record<string, string[]> = {
@@ -278,7 +330,6 @@
 	const fetchSolutions = async (errorType: string): Promise<void> => {
 		if (solutionsCache.has(errorType)) {
 			currentSolutions = solutionsCache.get(errorType) ?? null;
-			selectedCategory = null;
 			return;
 		}
 
@@ -290,8 +341,6 @@
 			const solutions = await getErrorSolutions(token, errorType);
 			solutionsCache.set(errorType, solutions);
 			currentSolutions = solutions;
-			selectedCategory = null;
-			selectedTestTimeCategory = null;
 		} catch (err: any) {
 			console.error('Failed to fetch solutions:', err);
 			solutionsError = typeof err === 'string' ? err : 'Failed to load solutions';
@@ -318,8 +367,6 @@
 		fetchSolutions(selectedIssue.type);
 	} else {
 		currentSolutions = null;
-		selectedCategory = null;
-		selectedTestTimeCategory = null;
 	}
 
 	// Generate solution suggestions based on issue type (fallback)
@@ -341,40 +388,14 @@
 		);
 	};
 
-	// Get filtered test-time methods (no training required)
-	const getFilteredTestTimeMethods = (): TestTimeMethod[] => {
-		if (!currentSolutions?.test_time_methods) return [];
-
-		if (selectedTestTimeCategory) {
-			return currentSolutions.test_time_methods_by_category[selectedTestTimeCategory] ?? [];
-		}
-
-		return currentSolutions.test_time_methods;
+	// Get all test-time methods (no training required)
+	const getTestTimeMethods = (): TestTimeMethod[] => {
+		return currentSolutions?.test_time_methods ?? [];
 	};
 
-	// Get filtered training methods
-	const getFilteredTrainingMethods = (): TrainingMethod[] => {
-		if (!currentSolutions?.training_methods) return [];
-
-		if (selectedCategory) {
-			return currentSolutions.training_methods_by_category[selectedCategory] ?? [];
-		}
-
-		return currentSolutions.training_methods;
-	};
-
-	// Get difficulty color
-	const getDifficultyColor = (difficulty: string): string => {
-		switch (difficulty) {
-			case 'beginner':
-				return '#22c55e';
-			case 'intermediate':
-				return '#f59e0b';
-			case 'advanced':
-				return '#ef4444';
-			default:
-				return '#6b7280';
-		}
+	// Get all training methods
+	const getTrainingMethods = (): TrainingMethod[] => {
+		return currentSolutions?.training_methods ?? [];
 	};
 
 	const buildIssueKey = (issue: IssueEntry) => {
@@ -2352,35 +2373,9 @@
 												</div>
 											</div>
 
-											<!-- Category Filter for Test-Time -->
-											{#if currentSolutions.test_time_categories?.length > 1}
-												<div class="flex flex-wrap gap-1 mb-1">
-													<button
-														class="px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors {selectedTestTimeCategory ===
-														null
-															? 'bg-emerald-500 text-white'
-															: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-														on:click={() => (selectedTestTimeCategory = null)}
-													>
-														{$i18n.t('All')}
-													</button>
-													{#each currentSolutions.test_time_categories as category}
-														<button
-															class="px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors {selectedTestTimeCategory ===
-															category
-																? 'bg-emerald-500 text-white'
-																: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-															on:click={() => (selectedTestTimeCategory = category)}
-														>
-															{category}
-														</button>
-													{/each}
-												</div>
-											{/if}
-
-											<!-- Test-Time Method Cards -->
+												<!-- Test-Time Method Cards -->
 											<div class="space-y-1.5 max-h-64 overflow-auto">
-												{#each getFilteredTestTimeMethods() as method}
+												{#each getTestTimeMethods() as method}
 													<div
 														class="p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800"
 													>
@@ -2391,14 +2386,6 @@
 																		class="text-xs font-semibold text-emerald-800 dark:text-emerald-200"
 																	>
 																		{method.name}
-																	</span>
-																	<span
-																		class="px-1 py-0.5 rounded text-[9px] font-medium"
-																		style="background-color: {getDifficultyColor(
-																			method.difficulty
-																		)}20; color: {getDifficultyColor(method.difficulty)};"
-																	>
-																		{method.difficulty}
 																	</span>
 																</div>
 																{#if method.full_name && method.full_name !== method.name}
@@ -2421,7 +2408,94 @@
 																		💡 {method.implementation}
 																	</div>
 																{/if}
-																{#if method.reference}
+																{#if method.citation_info && method.citation_info.length > 0}
+																	<div class="mt-1 space-y-0.5">
+																		{#each method.citation_info as citation, idx}
+																			{@const popoverId = `tt-${method.name}-${idx}`}
+																			<div class="relative inline-block">
+																				<!-- Inline citation badge: [Author et al., Year] -->
+																				<button
+																					class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium
+																						bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300
+																						border border-blue-200 dark:border-blue-700
+																						hover:bg-blue-100 dark:hover:bg-blue-800/40
+																						transition-colors cursor-pointer"
+																					on:click|stopPropagation={() => {
+																						activeCitationPopover = activeCitationPopover === popoverId ? null : popoverId;
+																					}}
+																					title={citation.formatted_citation}
+																				>
+																					<span>📄</span>
+																					<span>[{citation.inline_citation}]</span>
+																				</button>
+
+																				<!-- Citation detail popover -->
+																				{#if activeCitationPopover === popoverId}
+																					<div
+																						class="absolute z-50 left-0 top-full mt-1 w-72 p-2.5 rounded-lg shadow-lg
+																							bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600
+																							text-left"
+																					>
+																						<!-- Close button -->
+																						<button
+																							class="absolute top-1 right-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-0.5"
+																							aria-label="Close citation"
+																							on:click|stopPropagation={() => { activeCitationPopover = null; }}
+																						>
+																							<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+																								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+																							</svg>
+																						</button>
+
+																						<!-- Paper title -->
+																						<div class="text-[11px] font-semibold text-gray-800 dark:text-gray-200 pr-4 leading-tight">
+																							{citation.title}
+																						</div>
+
+																						<!-- Authors -->
+																						{#if citation.authors && citation.authors.length > 0}
+																							<div class="text-[10px] text-gray-600 dark:text-gray-400 mt-1 leading-snug">
+																								{citation.authors.slice(0, 5).join(', ')}{citation.authors.length > 5 ? ', ...' : ''}
+																							</div>
+																						{/if}
+
+																						<!-- Venue & Year -->
+																						<div class="flex items-center gap-1.5 mt-1 flex-wrap">
+																							{#if formatVenue(citation)}
+																								<span class="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
+																									{formatVenue(citation)}
+																								</span>
+																							{/if}
+																							{#if citation.year}
+																								<span class="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+																									{citation.year}
+																								</span>
+																							{/if}
+																						</div>
+
+																						<!-- Link to paper -->
+																						{#if getCitationUrl(citation)}
+																							<a
+																								href={getCitationUrl(citation)}
+																								target="_blank"
+																								rel="noopener noreferrer"
+																								class="inline-flex items-center gap-1 mt-1.5 px-1.5 py-0.5 rounded text-[9px] font-medium
+																									bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400
+																									hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors"
+																								on:click|stopPropagation
+																							>
+																								<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+																									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+																								</svg>
+																								{citation.doi ? 'DOI' : citation.eprint ? 'arXiv' : 'Link'}
+																							</a>
+																						{/if}
+																					</div>
+																				{/if}
+																			</div>
+																		{/each}
+																	</div>
+																{:else if method.reference}
 																	<div
 																		class="text-[10px] text-blue-500 dark:text-blue-400 mt-0.5 truncate"
 																	>
@@ -2476,35 +2550,9 @@
 												</div>
 											</div>
 
-											<!-- Category Filter for Training -->
-											{#if currentSolutions.categories?.length > 1}
-												<div class="flex flex-wrap gap-1 mb-1">
-													<button
-														class="px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors {selectedCategory ===
-														null
-															? 'bg-purple-500 text-white'
-															: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-														on:click={() => (selectedCategory = null)}
-													>
-														{$i18n.t('All')}
-													</button>
-													{#each currentSolutions.categories as category}
-														<button
-															class="px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors {selectedCategory ===
-															category
-																? 'bg-purple-500 text-white'
-																: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
-															on:click={() => (selectedCategory = category)}
-														>
-															{category}
-														</button>
-													{/each}
-												</div>
-											{/if}
-
 											<!-- Training Method Cards -->
 											<div class="space-y-1.5 max-h-64 overflow-auto">
-												{#each getFilteredTrainingMethods() as method}
+												{#each getTrainingMethods() as method}
 													<div
 														class="p-2 rounded-lg bg-purple-50/50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800"
 													>
@@ -2515,14 +2563,6 @@
 																		class="text-xs font-semibold text-purple-800 dark:text-purple-200"
 																	>
 																		{method.name}
-																	</span>
-																	<span
-																		class="px-1 py-0.5 rounded text-[9px] font-medium"
-																		style="background-color: {getDifficultyColor(
-																			method.difficulty
-																		)}20; color: {getDifficultyColor(method.difficulty)};"
-																	>
-																		{method.difficulty}
 																	</span>
 																</div>
 																{#if method.full_name && method.full_name !== method.name}
@@ -2540,7 +2580,94 @@
 																		✓ {method.effect}
 																	</div>
 																{/if}
-																{#if method.reference}
+																{#if method.citation_info && method.citation_info.length > 0}
+																	<div class="mt-1 space-y-0.5">
+																		{#each method.citation_info as citation, idx}
+																			{@const popoverId = `tr-${method.name}-${idx}`}
+																			<div class="relative inline-block">
+																				<!-- Inline citation badge: [Author et al., Year] -->
+																				<button
+																					class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium
+																						bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300
+																						border border-blue-200 dark:border-blue-700
+																						hover:bg-blue-100 dark:hover:bg-blue-800/40
+																						transition-colors cursor-pointer"
+																					on:click|stopPropagation={() => {
+																						activeCitationPopover = activeCitationPopover === popoverId ? null : popoverId;
+																					}}
+																					title={citation.formatted_citation}
+																				>
+																					<span>📄</span>
+																					<span>[{citation.inline_citation}]</span>
+																				</button>
+
+																				<!-- Citation detail popover -->
+																				{#if activeCitationPopover === popoverId}
+																					<div
+																						class="absolute z-50 left-0 top-full mt-1 w-72 p-2.5 rounded-lg shadow-lg
+																							bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600
+																							text-left"
+																					>
+																						<!-- Close button -->
+																						<button
+																							class="absolute top-1 right-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-0.5"
+																							aria-label="Close citation"
+																							on:click|stopPropagation={() => { activeCitationPopover = null; }}
+																						>
+																							<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+																								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+																							</svg>
+																						</button>
+
+																						<!-- Paper title -->
+																						<div class="text-[11px] font-semibold text-gray-800 dark:text-gray-200 pr-4 leading-tight">
+																							{citation.title}
+																						</div>
+
+																						<!-- Authors -->
+																						{#if citation.authors && citation.authors.length > 0}
+																							<div class="text-[10px] text-gray-600 dark:text-gray-400 mt-1 leading-snug">
+																								{citation.authors.slice(0, 5).join(', ')}{citation.authors.length > 5 ? ', ...' : ''}
+																							</div>
+																						{/if}
+
+																						<!-- Venue & Year -->
+																						<div class="flex items-center gap-1.5 mt-1 flex-wrap">
+																							{#if formatVenue(citation)}
+																								<span class="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
+																									{formatVenue(citation)}
+																								</span>
+																							{/if}
+																							{#if citation.year}
+																								<span class="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+																									{citation.year}
+																								</span>
+																							{/if}
+																						</div>
+
+																						<!-- Link to paper -->
+																						{#if getCitationUrl(citation)}
+																							<a
+																								href={getCitationUrl(citation)}
+																								target="_blank"
+																								rel="noopener noreferrer"
+																								class="inline-flex items-center gap-1 mt-1.5 px-1.5 py-0.5 rounded text-[9px] font-medium
+																									bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400
+																									hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors"
+																								on:click|stopPropagation
+																							>
+																								<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+																									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+																								</svg>
+																								{citation.doi ? 'DOI' : citation.eprint ? 'arXiv' : 'Link'}
+																							</a>
+																						{/if}
+																					</div>
+																				{/if}
+																			</div>
+																		{/each}
+																	</div>
+																{:else if method.reference}
 																	<div
 																		class="text-[10px] text-blue-500 dark:text-blue-400 mt-0.5 truncate"
 																	>

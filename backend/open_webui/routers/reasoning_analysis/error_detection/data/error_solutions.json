@@ -1,1243 +1,984 @@
 {
-	"version": "2.0.0",
-	"last_updated": "2026-01-12",
-	"description": "Knowledge base for error type solutions and optimization methods, categorized by training requirement",
-	"method_categories": {
-		"training_required": {
-			"label": "Training Required",
-			"description": "Methods that require fine-tuning, RLHF, or other training procedures",
-			"icon": "🎓"
-		},
-		"test_time_scaling": {
-			"label": "Test-Time Scaling",
-			"description": "Methods that can be applied at inference time without additional training",
-			"icon": "⚡"
-		}
-	},
-	"error_types": {
-		"Overthinking": {
-			"display_name": "Overthinking",
-			"description": "The model over-complicates simple problems, continues reasoning after finding the answer, or gets lost in unnecessary tangents.",
-			"severity_default": "medium",
-			"quick_fixes": [
-				"Identify where the answer was first found",
-				"Remove redundant verification steps",
-				"Streamline the reasoning process",
-				"Focus on essential reasoning only",
-				"Use length budget prompts to constrain output",
-				"Apply early stopping when answer is found"
-			],
-			"test_time_methods": [
-				{
-					"category": "Prompt Engineering",
-					"name": "Length Budget Prompting",
-					"full_name": "Token Budget Control via Prompting",
-					"description": "Specify token budget or brevity requirements directly in the prompt",
-					"effect": "Controls reasoning length without training, easy to implement",
-					"reference": "Zero-shot prompting technique",
-					"difficulty": "beginner",
-					"implementation": "Add instructions like 'Answer concisely in under 200 tokens' to prompts"
-				},
-				{
-					"category": "Prompt Engineering",
-					"name": "Zero-Shot-CoT Concise",
-					"full_name": "Concise Zero-Shot Chain-of-Thought",
-					"description": "Use 'Let's think step by step, briefly' instead of standard CoT prompt",
-					"effect": "Reduces verbosity while maintaining reasoning quality",
-					"reference": "arXiv:2205.11916",
-					"difficulty": "beginner",
-					"implementation": "Modify CoT prompt to emphasize brevity"
-				},
-				{
-					"category": "Decoding Strategy",
-					"name": "Early Stopping",
-					"full_name": "Answer Detection Early Stopping",
-					"description": "Detect when model has reached the answer and stop generation early",
-					"effect": "Prevents post-answer rambling and verification loops",
-					"reference": null,
-					"difficulty": "intermediate",
-					"implementation": "Monitor for answer patterns and trigger stop tokens"
-				},
-				{
-					"category": "Decoding Strategy",
-					"name": "Length Penalty Decoding",
-					"full_name": "Length Penalty in Beam Search",
-					"description": "Apply length penalty during beam search to favor shorter completions",
-					"effect": "Produces more concise outputs without retraining",
-					"reference": null,
-					"difficulty": "beginner",
-					"implementation": "Set length_penalty parameter in generation config"
-				},
-				{
-					"category": "Best-of-N",
-					"name": "Shortest Correct Selection",
-					"full_name": "Best-of-N with Shortest Correct",
-					"description": "Sample N responses and select the shortest one that is correct",
-					"effect": "Filters for concise reasoning at inference time",
-					"reference": "Large Language Monkeys, arXiv:2407.21787",
-					"difficulty": "intermediate",
-					"implementation": "Generate multiple samples, verify correctness, select shortest"
-				},
-				{
-					"category": "Compute-Optimal",
-					"name": "Adaptive Compute Allocation",
-					"full_name": "Difficulty-Aware Compute Allocation",
-					"description": "Allocate more compute to harder problems, less to easier ones",
-					"effect": "Optimizes test-time compute usage across problems",
-					"reference": "arXiv:2408.03314 - Scaling LLM Test-Time Compute",
-					"difficulty": "intermediate",
-					"implementation": "Estimate problem difficulty and adjust sampling budget accordingly"
-				}
-			],
-			"training_methods": [
-				{
-					"category": "RL-based Length Reward",
-					"name": "L1 (LCPO)",
-					"full_name": "Length Controlled Policy Optimization",
-					"description": "Controls reasoning length by specifying token budget in prompts during RL training",
-					"effect": "Can precisely control reasoning length, outperforms S1",
-					"reference": "DeepScaleR-1.5B/7B",
-					"difficulty": "advanced"
-				},
-				{
-					"category": "RL-based Length Reward",
-					"name": "ALP",
-					"full_name": "Adaptive Length Penalty",
-					"description": "Adaptively adjusts length penalty based on problem difficulty during training",
-					"effect": "Reduces 50% token usage while maintaining performance",
-					"reference": "NeurIPS 2025 ER Workshop Spotlight",
-					"difficulty": "advanced"
-				},
-				{
-					"category": "RL-based Length Reward",
-					"name": "Leash",
-					"full_name": "Lagrangian Primal-Dual Approach",
-					"description": "Models length control as constrained optimization problem",
-					"effect": "Reduces 60% reasoning length",
-					"reference": null,
-					"difficulty": "advanced"
-				},
-				{
-					"category": "RL-based Length Reward",
-					"name": "DAST",
-					"full_name": "Difficulty-Adaptive Slow-Thinking",
-					"description": "Builds length preference dataset based on SimPO",
-					"effect": "Adjusts reasoning depth based on problem complexity",
-					"reference": null,
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "RL-based Length Reward",
-					"name": "Kimi k1.5",
-					"full_name": "Kimi k1.5 Length Penalty",
-					"description": "Adds length penalty during policy optimization",
-					"effect": "Reduces excessive reasoning while maintaining accuracy",
-					"reference": "Kimi k1.5",
-					"difficulty": "advanced"
-				},
-				{
-					"category": "RL-based Length Reward",
-					"name": "Self-Braking Tuning",
-					"full_name": "Self-Braking Tuning",
-					"description": "Identifies overthinking patterns and precisely locates braking points",
-					"effect": "Compresses about 60% of reasoning",
-					"reference": null,
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "SFT-based Variable Length CoT",
-					"name": "CoT-Valve",
-					"full_name": "Length-Compressible Chain-of-Thought Tuning",
-					"description": "Fine-tunes on variable-length chain-of-thought data",
-					"effect": "Enables controllable reasoning length during inference",
-					"reference": null,
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "SFT-based Variable Length CoT",
-					"name": "TokenSkip",
-					"full_name": "Token Importance Skip",
-					"description": "Evaluates token importance and trims unimportant tokens",
-					"effect": "Reduces token count while preserving key information",
-					"reference": null,
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "SFT-based Variable Length CoT",
-					"name": "C3oT",
-					"full_name": "Compressed Chain-of-Thought",
-					"description": "Uses GPT-4 to compress reasoning while preserving key information",
-					"effect": "Shorter reasoning chains with maintained accuracy",
-					"reference": null,
-					"difficulty": "beginner"
-				},
-				{
-					"category": "SFT-based Variable Length CoT",
-					"name": "Self-Training",
-					"full_name": "Self-Training with Shortest Correct",
-					"description": "Model generates data and selects shortest correct answers for training",
-					"effect": "Learns efficient reasoning patterns",
-					"reference": null,
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "Latent Space Reasoning",
-					"name": "Coconut",
-					"full_name": "Continuous Latent Space Reasoning",
-					"description": "Trains LLMs to reason in continuous latent space",
-					"effect": "Compresses reasoning into fewer dimensions",
-					"reference": "Training LLMs to Reason in a Continuous Latent Space",
-					"difficulty": "advanced"
-				},
-				{
-					"category": "Latent Space Reasoning",
-					"name": "CCoT",
-					"full_name": "Compressed Chain of Thought via Dense Representations",
-					"description": "Compresses CoT into dense representations",
-					"effect": "Significant token reduction",
-					"reference": null,
-					"difficulty": "advanced"
-				},
-				{
-					"category": "Latent Space Reasoning",
-					"name": "SoftCoT",
-					"full_name": "Soft Chain-of-Thought for Efficient Reasoning",
-					"description": "Uses soft prompts for efficient reasoning",
-					"effect": "Reduces computational overhead",
-					"reference": null,
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "Latent Space Reasoning",
-					"name": "CODI",
-					"full_name": "Compressing CoT into Continuous Space via Self-Distillation",
-					"description": "Self-distillation to compress reasoning into continuous space",
-					"effect": "Maintains reasoning quality with compression",
-					"reference": null,
-					"difficulty": "advanced"
-				},
-				{
-					"category": "Latent Space Reasoning",
-					"name": "LightThinker",
-					"full_name": "LightThinker Gist Tokens",
-					"description": "Compresses thinking process into gist tokens",
-					"effect": "Efficient representation of reasoning steps",
-					"reference": null,
-					"difficulty": "intermediate"
-				}
-			],
-			"evaluation_metrics": [
-				"Token count per problem",
-				"Reasoning efficiency ratio",
-				"Time to correct answer",
-				"Redundancy score",
-				"Compute-to-accuracy ratio"
-			]
-		},
-		"Safety": {
-			"display_name": "Safety",
-			"description": "The reasoning contains harmful, dangerous, unethical, or discriminatory content.",
-			"severity_default": "high",
-			"quick_fixes": [
-				"Remove or rephrase harmful content",
-				"Add appropriate content warnings",
-				"Redirect to safer alternatives",
-				"Apply content filtering guidelines",
-				"Use safety-focused system prompts",
-				"Apply output filtering before display"
-			],
-			"test_time_methods": [
-				{
-					"category": "Output Filtering",
-					"name": "Safety Classifier",
-					"full_name": "Post-hoc Safety Classifier",
-					"description": "Use a separate classifier to filter unsafe outputs before showing to user",
-					"effect": "Catches unsafe content at inference time",
-					"reference": null,
-					"difficulty": "beginner",
-					"implementation": "Apply toxicity/safety classifier to model outputs"
-				},
-				{
-					"category": "Output Filtering",
-					"name": "Toxicity Detection",
-					"full_name": "Perspective API / Detoxify",
-					"description": "Use external APIs or models to detect and filter toxic content",
-					"effect": "Real-time toxicity screening",
-					"reference": "Perspective API, Detoxify",
-					"difficulty": "beginner",
-					"implementation": "Integrate toxicity detection API in output pipeline"
-				},
-				{
-					"category": "Input Guardrails",
-					"name": "Jailbreak Detection",
-					"full_name": "Prompt Injection Detection",
-					"description": "Detect and block adversarial prompts designed to elicit unsafe responses",
-					"effect": "Prevents jailbreak attempts before generation",
-					"reference": "arXiv:2310.06474",
-					"difficulty": "intermediate",
-					"implementation": "Use pattern matching or classifier on input prompts"
-				},
-				{
-					"category": "System Prompt",
-					"name": "Safety System Prompt",
-					"full_name": "Constitutional Principles in System Prompt",
-					"description": "Include safety principles and refusal guidelines in system prompt",
-					"effect": "Guides model toward safe responses without training",
-					"reference": null,
-					"difficulty": "beginner",
-					"implementation": "Add safety guidelines to system message"
-				},
-				{
-					"category": "Self-Critique",
-					"name": "Self-Check Safety",
-					"full_name": "Self-Evaluation for Safety",
-					"description": "Ask model to evaluate its own output for safety before returning",
-					"effect": "Model catches its own potentially harmful outputs",
-					"reference": null,
-					"difficulty": "intermediate",
-					"implementation": "Add safety self-check step after initial generation"
-				},
-				{
-					"category": "Ensemble",
-					"name": "Multi-Model Safety Check",
-					"full_name": "Cross-Model Safety Verification",
-					"description": "Use multiple models to cross-check safety of outputs",
-					"effect": "Reduces single-model safety failures",
-					"reference": null,
-					"difficulty": "intermediate",
-					"implementation": "Route outputs through multiple safety-aligned models"
-				}
-			],
-			"training_methods": [
-				{
-					"category": "RLHF Safety Alignment",
-					"name": "Constitutional AI",
-					"full_name": "Constitutional AI (CAI)",
-					"description": "Train model to follow a set of principles/constitution for safe responses using RL from AI feedback",
-					"effect": "Reduces harmful outputs while maintaining helpfulness",
-					"reference": "Anthropic Constitutional AI, arXiv:2212.08073",
-					"difficulty": "advanced"
-				},
-				{
-					"category": "RLHF Safety Alignment",
-					"name": "RLHF with Safety Reward",
-					"full_name": "RLHF with Separate Safety Reward Model",
-					"description": "Use separate reward model specifically trained on safety preferences",
-					"effect": "Better safety-helpfulness trade-off",
-					"reference": null,
-					"difficulty": "advanced"
-				},
-				{
-					"category": "RLHF Safety Alignment",
-					"name": "RLAIF",
-					"full_name": "RL from AI Feedback",
-					"description": "Use AI-generated feedback instead of human labels for safety training",
-					"effect": "Scalable safety alignment without human annotation",
-					"reference": "arXiv:2212.08073",
-					"difficulty": "advanced"
-				},
-				{
-					"category": "Safety SFT",
-					"name": "Self-Defense",
-					"full_name": "Multilingual Self-Defense Training",
-					"description": "Generate multilingual safety training data automatically for fine-tuning",
-					"effect": "Reduces unsafe content in multilingual contexts",
-					"reference": "arXiv:2310.06474",
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "Data Curation",
-					"name": "Red Teaming Data",
-					"full_name": "Red Team Generated Training Data",
-					"description": "Include adversarial examples in training data with safe responses",
-					"effect": "Model learns to handle edge cases safely",
-					"reference": null,
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "Adversarial Training",
-					"name": "Adversarial Training",
-					"full_name": "Adversarial Robustness Training",
-					"description": "Train on adversarial examples to improve robustness against attacks",
-					"effect": "Better resistance to jailbreak attempts",
-					"reference": null,
-					"difficulty": "advanced"
-				}
-			],
-			"evaluation_metrics": [
-				"Toxicity score",
-				"Bias detection metrics",
-				"Harmful content rate",
-				"Red team attack success rate",
-				"Jailbreak resistance rate"
-			]
-		},
-		"Knowledge Error": {
-			"display_name": "Knowledge Error",
-			"description": "The model fails to correctly recall factual information, misremembers facts, or confuses similar concepts.",
-			"severity_default": "medium",
-			"quick_fixes": [
-				"Verify facts against reliable sources",
-				"Cross-reference with authoritative databases",
-				"Correct factual inaccuracies",
-				"Add citations for claims",
-				"Use RAG to ground responses in documents",
-				"Ask model to express uncertainty about unsure facts"
-			],
-			"test_time_methods": [
-				{
-					"category": "Retrieval Augmentation",
-					"name": "RAG",
-					"full_name": "Retrieval-Augmented Generation",
-					"description": "Augment model with external knowledge retrieval at inference time",
-					"effect": "Grounds responses in retrieved documents, reduces factual errors",
-					"reference": "arXiv:2005.11401, arXiv:2312.10997",
-					"difficulty": "intermediate",
-					"implementation": "Retrieve relevant documents and include in context"
-				},
-				{
-					"category": "Retrieval Augmentation",
-					"name": "Advanced RAG",
-					"full_name": "Advanced RAG with Reranking",
-					"description": "Use query rewriting, reranking, and iterative retrieval for better context",
-					"effect": "Higher quality retrieved context for complex queries",
-					"reference": "arXiv:2312.10997",
-					"difficulty": "intermediate",
-					"implementation": "Implement query expansion, reranking, and multi-hop retrieval"
-				},
-				{
-					"category": "Self-Consistency",
-					"name": "Self-Consistency Check",
-					"full_name": "Multi-Sample Consistency Verification",
-					"description": "Generate multiple responses and check for factual consistency across them",
-					"effect": "Identifies uncertain or inconsistent factual claims",
-					"reference": "Wang et al., Self-Consistency",
-					"difficulty": "intermediate",
-					"implementation": "Sample multiple times and compare factual claims"
-				},
-				{
-					"category": "Verification",
-					"name": "Fact Verification API",
-					"full_name": "External Fact Checking",
-					"description": "Use external APIs or knowledge bases to verify factual claims",
-					"effect": "Real-time fact verification against authoritative sources",
-					"reference": null,
-					"difficulty": "intermediate",
-					"implementation": "Integrate fact-checking APIs like Wikipedia, Wikidata"
-				},
-				{
-					"category": "Uncertainty",
-					"name": "Uncertainty Prompting",
-					"full_name": "Epistemic Uncertainty Elicitation",
-					"description": "Prompt model to express uncertainty about facts it's unsure of",
-					"effect": "Model admits when it doesn't know, reducing confident errors",
-					"reference": null,
-					"difficulty": "beginner",
-					"implementation": "Add instructions to express uncertainty in system prompt"
-				},
-				{
-					"category": "Multi-Source",
-					"name": "Multi-Source Verification",
-					"full_name": "Cross-Source Fact Checking",
-					"description": "Retrieve from multiple sources and check agreement",
-					"effect": "Higher confidence in facts supported by multiple sources",
-					"reference": null,
-					"difficulty": "intermediate",
-					"implementation": "Query multiple knowledge sources and aggregate results"
-				}
-			],
-			"training_methods": [
-				{
-					"category": "Retrieval Augmentation",
-					"name": "REALM",
-					"full_name": "Retrieval-Augmented Language Model Pre-training",
-					"description": "Pre-train with retrieval mechanism integrated",
-					"effect": "Better knowledge integration during training",
-					"reference": null,
-					"difficulty": "advanced"
-				},
-				{
-					"category": "Knowledge Injection",
-					"name": "Knowledge Distillation",
-					"full_name": "Structured Knowledge Distillation",
-					"description": "Distill knowledge from knowledge graphs into model",
-					"effect": "Improved factual consistency",
-					"reference": null,
-					"difficulty": "advanced"
-				},
-				{
-					"category": "Knowledge Injection",
-					"name": "Continual Learning",
-					"full_name": "Continual Knowledge Updates",
-					"description": "Periodically update model with new factual information",
-					"effect": "Keeps knowledge current",
-					"reference": null,
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "Verification",
-					"name": "Self-Consistency",
-					"full_name": "Self-Consistency Checking",
-					"description": "Generate multiple responses and check for factual consistency",
-					"effect": "Reduces confidence in incorrect facts",
-					"reference": "Wang et al., Self-Consistency",
-					"difficulty": "beginner"
-				},
-				{
-					"category": "Verification",
-					"name": "Fact Verification Layer",
-					"full_name": "External Fact Verification",
-					"description": "Use external APIs to verify factual claims",
-					"effect": "Real-time fact checking",
-					"reference": null,
-					"difficulty": "intermediate"
-				}
-			],
-			"evaluation_metrics": [
-				"Factual accuracy rate",
-				"Knowledge retrieval precision",
-				"Temporal knowledge accuracy",
-				"Entity confusion rate",
-				"Source attribution accuracy"
-			]
-		},
-		"Logical Error": {
-			"display_name": "Logical Error",
-			"description": "The reasoning contains flawed logic, invalid inferences, non-sequiturs, or internal contradictions.",
-			"severity_default": "medium",
-			"quick_fixes": [
-				"Review the logical chain of reasoning",
-				"Check for contradictions with earlier statements",
-				"Ensure conclusions follow from premises",
-				"Validate cause-effect relationships",
-				"Use structured reasoning prompts",
-				"Apply step-by-step verification"
-			],
-			"test_time_methods": [
-				{
-					"category": "Prompt Engineering",
-					"name": "Chain-of-Thought",
-					"full_name": "Chain-of-Thought Prompting",
-					"description": "Prompt model to show step-by-step reasoning",
-					"effect": "Improves logical reasoning by making steps explicit",
-					"reference": "arXiv:2201.11903",
-					"difficulty": "beginner",
-					"implementation": "Add 'Let's think step by step' or provide reasoning examples"
-				},
-				{
-					"category": "Prompt Engineering",
-					"name": "Zero-Shot-CoT",
-					"full_name": "Zero-Shot Chain-of-Thought",
-					"description": "Elicit reasoning without examples using simple prompt addition",
-					"effect": "10-40% accuracy improvement on reasoning tasks",
-					"reference": "arXiv:2205.11916",
-					"difficulty": "beginner",
-					"implementation": "Append 'Let's think step by step' to prompts"
-				},
-				{
-					"category": "Tree Search",
-					"name": "Tree-of-Thought",
-					"full_name": "Tree-of-Thought Prompting",
-					"description": "Explore multiple reasoning paths and evaluate each using tree search",
-					"effect": "74% vs 4% on Game of 24 compared to CoT",
-					"reference": "arXiv:2305.10601",
-					"difficulty": "intermediate",
-					"implementation": "Generate multiple thought branches, evaluate, and backtrack if needed"
-				},
-				{
-					"category": "Tree Search",
-					"name": "MCTS Reasoning",
-					"full_name": "Monte Carlo Tree Search for Reasoning",
-					"description": "Use MCTS to explore reasoning paths with value-guided search",
-					"effect": "Systematic exploration of reasoning space",
-					"reference": "arXiv:2406.03816, arXiv:2501.04519",
-					"difficulty": "advanced",
-					"implementation": "Implement MCTS with LLM as policy and value function"
-				},
-				{
-					"category": "Tree Search",
-					"name": "LATS",
-					"full_name": "Language Agent Tree Search",
-					"description": "Combines MCTS with LLM reasoning, acting, and planning",
-					"effect": "92.7% pass@1 on HumanEval with GPT-4",
-					"reference": "arXiv:2310.04406",
-					"difficulty": "advanced",
-					"implementation": "Integrate MCTS with LM-powered value functions and self-reflection"
-				},
-				{
-					"category": "Self-Correction",
-					"name": "Self-Refine",
-					"full_name": "Iterative Self-Refinement",
-					"description": "Model critiques and refines its own reasoning iteratively",
-					"effect": "~20% improvement across diverse tasks",
-					"reference": "arXiv:2303.17651",
-					"difficulty": "intermediate",
-					"implementation": "Generate → Critique → Refine loop until quality threshold met"
-				},
-				{
-					"category": "Self-Correction",
-					"name": "Self-Consistency",
-					"full_name": "Self-Consistency Decoding",
-					"description": "Sample multiple reasoning paths and take majority vote on answer",
-					"effect": "Reduces logical errors through ensemble effect",
-					"reference": "Wang et al., Self-Consistency",
-					"difficulty": "intermediate",
-					"implementation": "Sample N responses with temperature, aggregate via majority vote"
-				},
-				{
-					"category": "Verification",
-					"name": "Step Verification",
-					"full_name": "Step-by-Step Verification",
-					"description": "Verify each reasoning step using a verifier model",
-					"effect": "Catches logical errors in intermediate steps",
-					"reference": "arXiv:2305.20050 - Let's Verify Step by Step",
-					"difficulty": "intermediate",
-					"implementation": "Use process reward model to score each step"
-				},
-				{
-					"category": "Best-of-N",
-					"name": "Best-of-N with Verifier",
-					"full_name": "Best-of-N Selection with Reward Model",
-					"description": "Generate N solutions and select best using reward/verifier model",
-					"effect": "Filters out solutions with logical errors",
-					"reference": "arXiv:2408.03314",
-					"difficulty": "intermediate",
-					"implementation": "Sample N times, score with verifier, select highest"
-				}
-			],
-			"training_methods": [
-				{
-					"category": "Structured Reasoning",
-					"name": "CoT Fine-tuning",
-					"full_name": "Chain-of-Thought Fine-tuning",
-					"description": "Fine-tune on high-quality step-by-step reasoning data",
-					"effect": "Improves logical flow in reasoning",
-					"reference": "Wei et al., Chain-of-Thought",
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "Process Supervision",
-					"name": "PRM Training",
-					"full_name": "Process Reward Model Training",
-					"description": "Train reward model to evaluate each reasoning step",
-					"effect": "Better detection of logical errors during generation",
-					"reference": "arXiv:2305.20050",
-					"difficulty": "advanced"
-				},
-				{
-					"category": "Self-Training",
-					"name": "ReST-MCTS*",
-					"full_name": "Reinforced Self-Training with MCTS",
-					"description": "Use MCTS to generate high-quality training data for self-improvement",
-					"effect": "Continuous improvement through self-play",
-					"reference": "arXiv:2406.03816",
-					"difficulty": "advanced"
-				},
-				{
-					"category": "Self-Training",
-					"name": "rStar-Math",
-					"full_name": "Self-Evolved Deep Thinking",
-					"description": "Small LLMs learn deep thinking through MCTS-based self-evolution",
-					"effect": "7B model reaches 90% on MATH benchmark",
-					"reference": "arXiv:2501.04519",
-					"difficulty": "advanced"
-				},
-				{
-					"category": "Logic Training",
-					"name": "Formal Logic Dataset",
-					"full_name": "Training on Formal Logic Problems",
-					"description": "Include formal logic puzzles in training data",
-					"effect": "Better understanding of logical structures",
-					"reference": null,
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "Logic Training",
-					"name": "Contradiction Detection",
-					"full_name": "Self-Contradiction Detection Training",
-					"description": "Train model to detect and flag its own contradictions",
-					"effect": "Reduces internal inconsistencies",
-					"reference": null,
-					"difficulty": "intermediate"
-				}
-			],
-			"evaluation_metrics": [
-				"Logical consistency score",
-				"Contradiction detection rate",
-				"Valid inference rate",
-				"Reasoning chain coherence",
-				"Step-by-step accuracy"
-			]
-		},
-		"Formal Error": {
-			"display_name": "Formal Error",
-			"description": "Calculation or computation mistakes, including arithmetic errors, unit conversion errors, or formula application errors.",
-			"severity_default": "medium",
-			"quick_fixes": [
-				"Recalculate using correct formulas",
-				"Verify arithmetic step by step",
-				"Use calculator for complex computations",
-				"Double-check units and conversions",
-				"Use code interpreter for verification",
-				"Apply dimensional analysis"
-			],
-			"test_time_methods": [
-				{
-					"category": "Tool Use",
-					"name": "Calculator Tool",
-					"full_name": "External Calculator Tool",
-					"description": "Offload arithmetic to external calculator tool",
-					"effect": "Eliminates arithmetic errors completely",
-					"reference": "Toolformer",
-					"difficulty": "beginner",
-					"implementation": "Enable tool calling for calculator functions"
-				},
-				{
-					"category": "Tool Use",
-					"name": "Code Interpreter",
-					"full_name": "Python Code Execution",
-					"description": "Execute Python code for complex calculations",
-					"effect": "Accurate computation with full verification",
-					"reference": "OpenAI Code Interpreter",
-					"difficulty": "beginner",
-					"implementation": "Generate and execute Python code for math operations"
-				},
-				{
-					"category": "Tool Use",
-					"name": "Symbolic Math",
-					"full_name": "Symbolic Mathematics Engine",
-					"description": "Use symbolic math tools like SymPy for algebraic manipulation",
-					"effect": "Precise symbolic computation without numerical errors",
-					"reference": null,
-					"difficulty": "intermediate",
-					"implementation": "Integrate SymPy or Mathematica for symbolic operations"
-				},
-				{
-					"category": "Verification",
-					"name": "Unit Verification",
-					"full_name": "Dimensional Analysis Check",
-					"description": "Verify unit consistency throughout calculations at inference time",
-					"effect": "Catches unit conversion errors",
-					"reference": null,
-					"difficulty": "intermediate",
-					"implementation": "Check dimensional consistency of equations"
-				},
-				{
-					"category": "Self-Check",
-					"name": "Reverse Verification",
-					"full_name": "Answer Substitution Check",
-					"description": "Substitute answer back into original problem to verify",
-					"effect": "Catches calculation errors through verification",
-					"reference": null,
-					"difficulty": "beginner",
-					"implementation": "Prompt model to verify by substitution"
-				},
-				{
-					"category": "Self-Check",
-					"name": "Step Recalculation",
-					"full_name": "Independent Step Recalculation",
-					"description": "Recalculate each step independently and compare results",
-					"effect": "Identifies specific steps with errors",
-					"reference": null,
-					"difficulty": "intermediate",
-					"implementation": "Generate calculation twice and compare"
-				},
-				{
-					"category": "Multi-Path",
-					"name": "Alternative Methods",
-					"full_name": "Multiple Solution Methods",
-					"description": "Solve problem using multiple methods and check consistency",
-					"effect": "Cross-validates answers using different approaches",
-					"reference": null,
-					"difficulty": "intermediate",
-					"implementation": "Prompt for multiple solution approaches"
-				}
-			],
-			"training_methods": [
-				{
-					"category": "Tool Training",
-					"name": "Toolformer",
-					"full_name": "Toolformer Self-Supervised Tool Learning",
-					"description": "Train model to decide when to use external tools",
-					"effect": "Model learns when to offload to calculator",
-					"reference": "Toolformer",
-					"difficulty": "advanced"
-				},
-				{
-					"category": "Training Enhancement",
-					"name": "Math SFT",
-					"full_name": "Mathematical SFT Data",
-					"description": "Fine-tune on high-quality mathematical reasoning data",
-					"effect": "Better formula application and arithmetic",
-					"reference": null,
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "Process Supervision",
-					"name": "Math PRM",
-					"full_name": "Math Process Reward Model",
-					"description": "Train PRM specifically for mathematical reasoning steps",
-					"effect": "Catches calculation errors during reasoning",
-					"reference": "Lightman et al., PRM800K",
-					"difficulty": "advanced"
-				},
-				{
-					"category": "Code Generation",
-					"name": "Code-Augmented Training",
-					"full_name": "Code-Augmented Math Training",
-					"description": "Train on data that uses code for calculations",
-					"effect": "Model learns to generate verifiable code",
-					"reference": "arXiv:2501.04519",
-					"difficulty": "intermediate"
-				}
-			],
-			"evaluation_metrics": [
-				"Arithmetic accuracy",
-				"Formula application correctness",
-				"Unit conversion accuracy",
-				"Step-by-step calculation verification",
-				"Tool usage appropriateness"
-			]
-		},
-		"Hallucination": {
-			"display_name": "Hallucination",
-			"description": "The model generates fabricated information, invents non-existent sources, or claims false details with high confidence.",
-			"severity_default": "medium",
-			"quick_fixes": [
-				"Verify all claims against known facts",
-				"Remove fabricated information",
-				"Request source citations",
-				"Cross-reference with reliable data",
-				"Use RAG to ground responses",
-				"Check confidence calibration"
-			],
-			"test_time_methods": [
-				{
-					"category": "Retrieval Grounding",
-					"name": "RAG",
-					"full_name": "Retrieval-Augmented Generation",
-					"description": "Ground responses in retrieved documents at inference time",
-					"effect": "Reduces hallucination by providing factual source material",
-					"reference": "arXiv:2005.11401, arXiv:2312.10997",
-					"difficulty": "intermediate",
-					"implementation": "Retrieve relevant documents and include in context"
-				},
-				{
-					"category": "Retrieval Grounding",
-					"name": "MIRAGE",
-					"full_name": "Model Internals-based RAG Explanations",
-					"description": "Use model internals for faithful answer attribution in RAG",
-					"effect": "Better source attribution and reduced hallucination",
-					"reference": "arXiv:2406.13663",
-					"difficulty": "advanced",
-					"implementation": "Analyze model attention for source attribution"
-				},
-				{
-					"category": "Self-Consistency",
-					"name": "SelfCheckGPT",
-					"full_name": "Self-Consistency Hallucination Detection",
-					"description": "Sample multiple responses and detect inconsistencies as likely hallucinations",
-					"effect": "Identifies claims that vary across samples",
-					"reference": "SelfCheckGPT paper",
-					"difficulty": "intermediate",
-					"implementation": "Generate multiple samples, compare factual claims"
-				},
-				{
-					"category": "Uncertainty",
-					"name": "Verbalized Uncertainty",
-					"full_name": "Uncertainty Verbalization Prompting",
-					"description": "Prompt model to express confidence levels for claims",
-					"effect": "Highlights potentially unreliable information",
-					"reference": null,
-					"difficulty": "beginner",
-					"implementation": "Add 'express your confidence level' to prompts"
-				},
-				{
-					"category": "Uncertainty",
-					"name": "Token Probability",
-					"full_name": "Token Probability Analysis",
-					"description": "Analyze token probabilities to detect low-confidence generations",
-					"effect": "Identifies uncertain/potentially hallucinated content",
-					"reference": null,
-					"difficulty": "intermediate",
-					"implementation": "Monitor log probabilities during generation"
-				},
-				{
-					"category": "Verification",
-					"name": "Citation Verification",
-					"full_name": "Source Citation Verification",
-					"description": "Verify that cited sources exist and contain claimed information",
-					"effect": "Catches fabricated citations",
-					"reference": null,
-					"difficulty": "intermediate",
-					"implementation": "Check cited sources against knowledge bases"
-				},
-				{
-					"category": "Multi-Agent",
-					"name": "Debate Verification",
-					"full_name": "Multi-Agent Debate for Verification",
-					"description": "Have multiple model instances debate and verify claims",
-					"effect": "Cross-verification reduces false claims",
-					"reference": null,
-					"difficulty": "intermediate",
-					"implementation": "Run multiple instances that challenge each other's claims"
-				}
-			],
-			"training_methods": [
-				{
-					"category": "Grounding",
-					"name": "Attribution Training",
-					"full_name": "Attribution-Aware Training",
-					"description": "Train model to cite sources and express uncertainty",
-					"effect": "Better calibrated confidence and source attribution",
-					"reference": null,
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "Self-Awareness",
-					"name": "Uncertainty Quantification",
-					"full_name": "Uncertainty-Aware Training",
-					"description": "Train model to express uncertainty when unsure",
-					"effect": "Model says 'I don't know' appropriately",
-					"reference": null,
-					"difficulty": "intermediate"
-				},
-				{
-					"category": "Self-Awareness",
-					"name": "Confidence Calibration",
-					"full_name": "Confidence Calibration Training",
-					"description": "Calibrate model confidence with actual accuracy",
-					"effect": "Reduces overconfident hallucinations",
-					"reference": null,
-					"difficulty": "advanced"
-				},
-				{
-					"category": "Detection",
-					"name": "SelfCheckGPT",
-					"full_name": "Self-Consistency Hallucination Detection",
-					"description": "Sample multiple responses and detect inconsistencies",
-					"effect": "Identifies likely hallucinations",
-					"reference": "SelfCheckGPT paper",
-					"difficulty": "beginner"
-				},
-				{
-					"category": "RLHF",
-					"name": "Factuality RLHF",
-					"full_name": "RLHF with Factuality Reward",
-					"description": "Use factuality as part of reward signal",
-					"effect": "Model learns to avoid fabrication",
-					"reference": null,
-					"difficulty": "advanced"
-				}
-			],
-			"evaluation_metrics": [
-				"Hallucination rate",
-				"Source attribution accuracy",
-				"Confidence calibration",
-				"Factual grounding score",
-				"Self-consistency rate"
-			]
-		},
-		"Readability": {
-			"display_name": "Readability",
-			"description": "The response has poor structure, confusing organization, unclear explanations, or formatting issues.",
-			"severity_default": "low",
-			"quick_fixes": [
-				"Restructure for clarity",
-				"Break down complex sentences",
-				"Add transitional phrases",
-				"Improve organization and flow",
-				"Use formatting instructions in prompts",
-				"Apply post-processing for structure"
-			],
-			"test_time_methods": [
-				{
-					"category": "Prompt Engineering",
-					"name": "Format Instructions",
-					"full_name": "Structured Format Instructions",
-					"description": "Include detailed formatting instructions in prompts",
-					"effect": "Better adherence to desired structure",
-					"reference": null,
-					"difficulty": "beginner",
-					"implementation": "Specify output format, headings, bullet points in system prompt"
-				},
-				{
-					"category": "Prompt Engineering",
-					"name": "Template Prompting",
-					"full_name": "Response Template Prompting",
-					"description": "Provide output template for model to follow",
-					"effect": "Consistent structured outputs",
-					"reference": null,
-					"difficulty": "beginner",
-					"implementation": "Include template structure in prompt"
-				},
-				{
-					"category": "Post-Processing",
-					"name": "Output Formatting",
-					"full_name": "Post-hoc Output Formatting",
-					"description": "Apply formatting rules to model output after generation",
-					"effect": "Clean, consistent output format",
-					"reference": null,
-					"difficulty": "beginner",
-					"implementation": "Parse and reformat output using rules"
-				},
-				{
-					"category": "Self-Refinement",
-					"name": "Clarity Refinement",
-					"full_name": "Self-Refinement for Clarity",
-					"description": "Ask model to rewrite its output for better clarity",
-					"effect": "Improved readability through self-editing",
-					"reference": "arXiv:2303.17651",
-					"difficulty": "intermediate",
-					"implementation": "Generate → Ask to improve clarity → Output refined version"
-				},
-				{
-					"category": "Structured Output",
-					"name": "JSON Mode",
-					"full_name": "Structured JSON Output",
-					"description": "Use JSON mode or structured output constraints",
-					"effect": "Guaranteed structured output format",
-					"reference": null,
-					"difficulty": "beginner",
-					"implementation": "Enable JSON mode or use function calling"
-				}
-			],
-			"training_methods": [
-				{
-					"category": "Style Training",
-					"name": "Style SFT",
-					"full_name": "Style-Focused Fine-tuning",
-					"description": "Fine-tune on well-structured, clear writing examples",
-					"effect": "Improves output clarity and organization",
-					"reference": null,
-					"difficulty": "beginner"
-				},
-				{
-					"category": "Style Training",
-					"name": "Instruction Following",
-					"full_name": "Enhanced Instruction Following",
-					"description": "Train to follow formatting and structure instructions",
-					"effect": "Better adherence to requested format",
-					"reference": null,
-					"difficulty": "beginner"
-				},
-				{
-					"category": "RLHF",
-					"name": "Readability RLHF",
-					"full_name": "RLHF with Readability Preference",
-					"description": "Include readability in human preference training",
-					"effect": "Model learns clear communication style",
-					"reference": null,
-					"difficulty": "intermediate"
-				}
-			],
-			"evaluation_metrics": [
-				"Readability score (Flesch-Kincaid)",
-				"Structure coherence",
-				"Format consistency",
-				"User comprehension rate",
-				"Instruction following accuracy"
-			]
-		}
-	},
-	"difficulty_levels": {
-		"beginner": {
-			"label": "Beginner",
-			"description": "Can be implemented with minimal ML expertise, often just prompting or API calls",
-			"color": "#22c55e"
-		},
-		"intermediate": {
-			"label": "Intermediate",
-			"description": "Requires solid ML/NLP understanding or moderate engineering effort",
-			"color": "#f59e0b"
-		},
-		"advanced": {
-			"label": "Advanced",
-			"description": "Requires deep expertise, significant compute resources, and substantial engineering",
-			"color": "#ef4444"
-		}
-	},
-	"categories": {
-		"test_time": {
-			"Prompt Engineering": {
-				"description": "Techniques that modify prompts to improve reasoning without training",
-				"applicable_to": ["Overthinking", "Logical Error", "Readability"],
-				"requires_training": false
-			},
-			"Tree Search": {
-				"description": "Explore multiple reasoning paths using search algorithms at inference",
-				"applicable_to": ["Logical Error"],
-				"requires_training": false
-			},
-			"Self-Correction": {
-				"description": "Model critiques and refines its own outputs iteratively",
-				"applicable_to": ["Logical Error", "Readability"],
-				"requires_training": false
-			},
-			"Best-of-N": {
-				"description": "Sample multiple responses and select the best one",
-				"applicable_to": ["Overthinking", "Logical Error"],
-				"requires_training": false
-			},
-			"Retrieval Grounding": {
-				"description": "Augment with external knowledge retrieval at inference time",
-				"applicable_to": ["Knowledge Error", "Hallucination"],
-				"requires_training": false
-			},
-			"Tool Use": {
-				"description": "Use external tools (calculators, code interpreters) at inference",
-				"applicable_to": ["Formal Error"],
-				"requires_training": false
-			},
-			"Output Filtering": {
-				"description": "Filter or modify outputs post-generation",
-				"applicable_to": ["Safety"],
-				"requires_training": false
-			},
-			"Self-Consistency": {
-				"description": "Sample multiple times and check consistency",
-				"applicable_to": ["Knowledge Error", "Hallucination", "Logical Error"],
-				"requires_training": false
-			},
-			"Decoding Strategy": {
-				"description": "Modify decoding parameters for better outputs",
-				"applicable_to": ["Overthinking"],
-				"requires_training": false
-			}
-		},
-		"training": {
-			"RL-based Length Reward": {
-				"description": "Methods using reinforcement learning with length penalties",
-				"applicable_to": ["Overthinking"],
-				"requires_training": true
-			},
-			"SFT-based Variable Length CoT": {
-				"description": "Supervised fine-tuning on variable length chain-of-thought data",
-				"applicable_to": ["Overthinking"],
-				"requires_training": true
-			},
-			"Latent Space Reasoning": {
-				"description": "Compress reasoning into latent representations",
-				"applicable_to": ["Overthinking"],
-				"requires_training": true
-			},
-			"RLHF Safety Alignment": {
-				"description": "RLHF techniques for safety alignment",
-				"applicable_to": ["Safety"],
-				"requires_training": true
-			},
-			"Process Supervision": {
-				"description": "Train reward models to evaluate reasoning steps",
-				"applicable_to": ["Logical Error", "Formal Error"],
-				"requires_training": true
-			},
-			"Self-Training": {
-				"description": "Model improves through self-generated training data",
-				"applicable_to": ["Logical Error"],
-				"requires_training": true
-			},
-			"Knowledge Injection": {
-				"description": "Inject structured knowledge during training",
-				"applicable_to": ["Knowledge Error"],
-				"requires_training": true
-			},
-			"Confidence Calibration": {
-				"description": "Train models to have well-calibrated confidence",
-				"applicable_to": ["Hallucination"],
-				"requires_training": true
-			}
-		}
-	},
-	"references": {
-		"arXiv:2201.11903": {
-			"title": "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models",
-			"authors": "Wei et al.",
-			"year": 2022,
-			"venue": "NeurIPS 2022"
-		},
-		"arXiv:2205.11916": {
-			"title": "Large Language Models are Zero-Shot Reasoners",
-			"authors": "Kojima et al.",
-			"year": 2022,
-			"venue": "NeurIPS 2022"
-		},
-		"arXiv:2305.10601": {
-			"title": "Tree of Thoughts: Deliberate Problem Solving with Large Language Models",
-			"authors": "Yao et al.",
-			"year": 2023,
-			"venue": "NeurIPS 2023"
-		},
-		"arXiv:2305.20050": {
-			"title": "Let's Verify Step by Step",
-			"authors": "Lightman et al.",
-			"year": 2023,
-			"venue": "OpenAI"
-		},
-		"arXiv:2303.17651": {
-			"title": "Self-Refine: Iterative Refinement with Self-Feedback",
-			"authors": "Madaan et al.",
-			"year": 2023,
-			"venue": "NeurIPS 2023"
-		},
-		"arXiv:2310.04406": {
-			"title": "Language Agent Tree Search Unifies Reasoning Acting and Planning",
-			"authors": "Zhou et al.",
-			"year": 2023,
-			"venue": "NeurIPS 2024"
-		},
-		"arXiv:2406.03816": {
-			"title": "ReST-MCTS*: LLM Self-Training via Process Reward Guided Tree Search",
-			"authors": "Zhang et al.",
-			"year": 2024,
-			"venue": "NeurIPS 2024"
-		},
-		"arXiv:2408.03314": {
-			"title": "Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters",
-			"authors": "Snell et al.",
-			"year": 2024,
-			"venue": "Google DeepMind"
-		},
-		"arXiv:2407.21787": {
-			"title": "Large Language Monkeys: Scaling Inference Compute with Repeated Sampling",
-			"authors": "Brown et al.",
-			"year": 2024,
-			"venue": "Stanford"
-		},
-		"arXiv:2501.04519": {
-			"title": "rStar-Math: Small LLMs Can Master Math Reasoning with Self-Evolved Deep Thinking",
-			"authors": "Guan et al.",
-			"year": 2025,
-			"venue": "Microsoft Research"
-		},
-		"arXiv:2005.11401": {
-			"title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
-			"authors": "Lewis et al.",
-			"year": 2020,
-			"venue": "NeurIPS 2020"
-		},
-		"arXiv:2312.10997": {
-			"title": "Retrieval-Augmented Generation for Large Language Models: A Survey",
-			"authors": "Gao et al.",
-			"year": 2023,
-			"venue": "Survey"
-		},
-		"arXiv:2212.08073": {
-			"title": "Constitutional AI: Harmlessness from AI Feedback",
-			"authors": "Bai et al.",
-			"year": 2022,
-			"venue": "Anthropic"
-		},
-		"arXiv:2310.06474": {
-			"title": "Multilingual Jailbreak Challenges in Large Language Models",
-			"authors": "Deng et al.",
-			"year": 2023,
-			"venue": "ICLR 2024"
-		},
-		"arXiv:2406.13663": {
-			"title": "Model Internals-based Answer Attribution for Trustworthy RAG",
-			"authors": "Qi et al.",
-			"year": 2024,
-			"venue": "EMNLP 2024"
-		}
-	}
+  "version": "2.0.0",
+  "last_updated": "2026-01-12",
+  "description": "Knowledge base for error type solutions and optimization methods, categorized by training requirement",
+  "method_categories": {
+    "training_required": {
+      "label": "Training Required",
+      "description": "Methods that require fine-tuning, RLHF, or other training procedures",
+      "icon": "🎓"
+    },
+    "test_time_scaling": {
+      "label": "Test-Time Scaling",
+      "description": "Methods that can be applied at inference time without additional training",
+      "icon": "⚡"
+    }
+  },
+  "error_types": {
+    "Overthinking": {
+      "display_name": "Overthinking",
+      "description": "The model over-complicates simple problems, continues reasoning after finding the answer, or gets lost in unnecessary tangents.",
+      "quick_fixes": [
+        "Identify where the answer was first found",
+        "Remove redundant verification steps",
+        "Streamline the reasoning process",
+        "Focus on essential reasoning only",
+        "Use length budget prompts to constrain output",
+        "Apply early stopping when answer is found"
+      ],
+      "test_time_methods": [
+        {
+          "category": "Prompt Engineering",
+          "name": "Zero-Shot-CoT Concise",
+          "full_name": "Concise Zero-Shot Chain-of-Thought",
+          "description": "Use 'Let's think step by step, briefly' instead of standard CoT prompt",
+          "effect": "Reduces verbosity while maintaining reasoning quality",
+          "reference": "Large Language Models are Zero-Shot Reasoners",
+          "implementation": "Modify CoT prompt to emphasize brevity"
+        },
+        {
+          "category": "Decoding Strategy",
+          "name": "Early Stopping",
+          "full_name": "Answer Detection Early Stopping",
+          "description": "Detect when model has reached the answer and stop generation early",
+          "effect": "Prevents post-answer rambling and verification loops",
+          "reference": "Early Stopping Chain-of-thoughts in Large Language Models",
+          "implementation": "Monitor for answer patterns and trigger stop tokens"
+        },
+        {
+          "category": "Decoding Strategy",
+          "name": "HALT-CoT",
+          "full_name": "Entropy-Based Early Stopping",
+          "description": "Compute answer distribution entropy during chain-of-thought and halt once it drops below a threshold",
+          "effect": "Saves 15–30% tokens while maintaining accuracy",
+          "reference": "HALT-CoT: Model-Agnostic Early Stopping for Chain-of-Thought Reasoning via Answer Entropy",
+          "implementation": "Monitor probability distribution across answers at each reasoning step and stop generation when entropy falls below threshold"
+        },
+        {
+          "category": "Best-of-N",
+          "name": "Shortest Correct Selection",
+          "full_name": "Best-of-N with Shortest Correct",
+          "description": "Sample N responses and select the shortest one that is correct",
+          "effect": "Filters for concise reasoning at inference time",
+          "reference": "Large Language Monkeys: Scaling Inference Compute with Repeated Sampling",
+          "implementation": "Generate multiple samples, verify correctness, select shortest"
+        },
+        {
+          "category": "Compute-Optimal",
+          "name": "Adaptive Compute Allocation",
+          "full_name": "Difficulty-Aware Compute Allocation",
+          "description": "Allocate more compute to harder problems, less to easier ones",
+          "effect": "Optimizes test-time compute usage across problems",
+          "reference": "Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters",
+          "implementation": "Estimate problem difficulty and adjust sampling budget accordingly"
+        }
+      ],
+      "training_methods": [
+        {
+          "category": "RL-based Length Reward",
+          "name": "Leash",
+          "full_name": "Lagrangian Primal-Dual Approach",
+          "description": "Models length control as constrained optimization problem",
+          "effect": "Reduces 60% reasoning length",
+          "reference": "Leash: Adaptive Length Penalty and Reward Shaping for Efficient Large Reasoning Model"
+        },
+        {
+          "category": "RL-based Length Reward",
+          "name": "DAST",
+          "full_name": "Difficulty-Adaptive Slow-Thinking",
+          "description": "Builds length preference dataset based on SimPO",
+          "effect": "Adjusts reasoning depth based on problem complexity",
+          "reference": "DAST: Difficulty-Adaptive Slow-Thinking for Large Reasoning Models"
+        },
+        {
+          "category": "RL-based Length Reward",
+          "name": "Kimi k1.5",
+          "full_name": "Kimi k1.5 Length Penalty",
+          "description": "Adds length penalty during policy optimization",
+          "effect": "Reduces excessive reasoning while maintaining accuracy",
+          "reference": "Kimi k1.5: Scaling Reinforcement Learning with LLMs"
+        },
+        {
+          "category": "RL-based Length Reward",
+          "name": "Self-Braking Tuning",
+          "full_name": "Self-Braking Tuning",
+          "description": "Identifies overthinking patterns and precisely locates braking points",
+          "effect": "Compresses about 60% of reasoning",
+          "reference": "Let LRMs Break Free from Overthinking via Self-Braking Tuning"
+        },
+        {
+          "category": "SFT-based Variable Length CoT",
+          "name": "CoT-Valve",
+          "full_name": "Length-Compressible Chain-of-Thought Tuning",
+          "description": "Fine-tunes on variable-length chain-of-thought data",
+          "effect": "Enables controllable reasoning length during inference",
+          "reference": "CoT-Valve: Length-Compressible Chain-of-Thought Tuning"
+        },
+        {
+          "category": "SFT-based Variable Length CoT",
+          "name": "TokenSkip",
+          "full_name": "Token Importance Skip",
+          "description": "Evaluates token importance and trims unimportant tokens",
+          "effect": "Reduces token count while preserving key information",
+          "reference": "TokenSkip: Controllable Chain-of-Thought Compression in LLMs"
+        },
+        {
+          "category": "SFT-based Variable Length CoT",
+          "name": "C3oT",
+          "full_name": "Compressed Chain-of-Thought",
+          "description": "Uses GPT-4 to compress reasoning while preserving key information",
+          "effect": "Shorter reasoning chains with maintained accuracy",
+          "reference": "C3oT: Generating Shorter Chain-of-Thought without Compromising Effectiveness"
+        },
+        {
+          "category": "SFT-based Variable Length CoT",
+          "name": "Self-Training",
+          "full_name": "Self-Training with Shortest Correct",
+          "description": "Model generates data and selects shortest correct answers for training",
+          "effect": "Learns efficient reasoning patterns",
+          "reference": "Self-Training Elicits Concise Reasoning in Large Language Models"
+        },
+        {
+          "category": "Latent Space Reasoning",
+          "name": "Coconut",
+          "full_name": "Continuous Latent Space Reasoning",
+          "description": "Trains LLMs to reason in continuous latent space",
+          "effect": "Compresses reasoning into fewer dimensions",
+          "reference": "Training Large Language Models to Reason in a Continuous Latent Space"
+        },
+        {
+          "category": "Latent Space Reasoning",
+          "name": "CCoT",
+          "full_name": "Compressed Chain of Thought via Dense Representations",
+          "description": "Compresses CoT into dense representations",
+          "effect": "Significant token reduction",
+          "reference": "Compressed Chain of Thought: Efficient Reasoning Through Dense Representations"
+        },
+        {
+          "category": "Latent Space Reasoning",
+          "name": "SoftCoT",
+          "full_name": "Soft Chain-of-Thought for Efficient Reasoning",
+          "description": "Uses soft prompts for efficient reasoning",
+          "effect": "Reduces computational overhead",
+          "reference": "SoftCoT: Soft Chain-of-Thought for Efficient Reasoning with LLMs"
+        },
+        {
+          "category": "Latent Space Reasoning",
+          "name": "CODI",
+          "full_name": "Compressing CoT into Continuous Space via Self-Distillation",
+          "description": "Self-distillation to compress reasoning into continuous space",
+          "effect": "Maintains reasoning quality with compression",
+          "reference": "CODI: Compressing Chain-of-Thought into Continuous Space via Self-Distillation"
+        },
+        {
+          "category": "Latent Space Reasoning",
+          "name": "LightThinker",
+          "full_name": "LightThinker Gist Tokens",
+          "description": "Compresses thinking process into gist tokens",
+          "effect": "Efficient representation of reasoning steps",
+          "reference": "LightThinker: Thinking Step-by-Step Compression"
+        }
+      ],
+      "evaluation_metrics": [
+        "Token count per problem",
+        "Reasoning efficiency ratio",
+        "Time to correct answer",
+        "Redundancy score",
+        "Compute-to-accuracy ratio"
+      ]
+    },
+    "Safety": {
+      "display_name": "Safety",
+      "description": "The reasoning contains harmful, dangerous, unethical, or discriminatory content.",
+      "quick_fixes": [
+        "Remove or rephrase harmful content",
+        "Add appropriate content warnings",
+        "Redirect to safer alternatives",
+        "Apply content filtering guidelines",
+        "Use safety-focused system prompts",
+        "Apply output filtering before display"
+      ],
+      "test_time_methods": [
+        {
+          "category": "Output Filtering",
+          "name": "Safety Classifier",
+          "full_name": "Post-hoc Safety Classifier",
+          "description": "Use a separate classifier to filter unsafe outputs before showing to user",
+          "effect": "Catches unsafe content at inference time",
+          "reference": "Robust Safety Classifier for Large Language Models: Adversarial Prompt Shield",
+          "implementation": "Apply toxicity/safety classifier to model outputs"
+        },
+        {
+          "category": "Output Filtering",
+          "name": "Toxicity Detection",
+          "full_name": "Perspective API / Detoxify",
+          "description": "Use external APIs or models to detect and filter toxic content",
+          "effect": "Real-time toxicity screening",
+          "reference": "Perspective API, Detoxify",
+          "implementation": "Integrate toxicity detection API in output pipeline"
+        },
+        {
+          "category": "Input Guardrails",
+          "name": "Jailbreak Detection",
+          "full_name": "Prompt Injection Detection",
+          "description": "Detect and block adversarial prompts designed to elicit unsafe responses",
+          "effect": "Prevents jailbreak attempts before generation",
+          "reference": "Multilingual Jailbreak Challenges in Large Language Models",
+          "implementation": "Use pattern matching or classifier on input prompts"
+        },
+        {
+          "category": "System Prompt",
+          "name": "Safety System Prompt",
+          "full_name": "Constitutional Principles in System Prompt",
+          "description": "Include safety principles and refusal guidelines in system prompt",
+          "effect": "Guides model toward safe responses without training",
+          "reference": "Controllable Safety Alignment: Inference-Time Adaptation to Diverse Safety Requirements",
+          "implementation": "Add safety guidelines to system message"
+        },
+        {
+          "category": "Self-Critique",
+          "name": "Self-Check Safety",
+          "full_name": "Self-Evaluation for Safety",
+          "description": "Ask model to evaluate its own output for safety before returning",
+          "effect": "Model catches its own potentially harmful outputs",
+          "reference": "When Models Outthink Their Safety: Mitigating Self-Jailbreak in Large Reasoning Models with Chain-of-Guardrails",
+          "implementation": "Add safety self-check step after initial generation"
+        },
+        {
+          "category": "Ensemble",
+          "name": "Multi-Model Safety Check",
+          "full_name": "Cross-Model Safety Verification",
+          "description": "Use multiple models to cross-check safety of outputs",
+          "effect": "Reduces single-model safety failures",
+          "reference": "Efficient LLM Safety Evaluation through Multi-Agent Debate",
+          "implementation": "Route outputs through multiple safety-aligned models"
+        }
+      ],
+      "training_methods": [
+        {
+          "category": "RLHF Safety Alignment",
+          "name": "Constitutional AI",
+          "full_name": "Constitutional AI (CAI)",
+          "description": "Train model to follow a set of principles/constitution for safe responses using RL from AI feedback",
+          "effect": "Reduces harmful outputs while maintaining helpfulness",
+          "reference": "Constitutional AI: Harmlessness from AI Feedback"
+        },
+        {
+          "category": "RLHF Safety Alignment",
+          "name": "RLHF with Safety Reward",
+          "full_name": "RLHF with Separate Safety Reward Model",
+          "description": "Use separate reward model specifically trained on safety preferences",
+          "effect": "Better safety-helpfulness trade-off",
+          "reference": "Rule Based Rewards for Language Model Safety"
+        },
+        {
+          "category": "RLHF Safety Alignment",
+          "name": "RLAIF",
+          "full_name": "RL from AI Feedback",
+          "description": "Use AI-generated feedback instead of human labels for safety training",
+          "effect": "Scalable safety alignment without human annotation",
+          "reference": "Constitutional AI: Harmlessness from AI Feedback"
+        },
+        {
+          "category": "Safety SFT",
+          "name": "Self-Defense",
+          "full_name": "Multilingual Self-Defense Training",
+          "description": "Generate multilingual safety training data automatically for fine-tuning",
+          "effect": "Reduces unsafe content in multilingual contexts",
+          "reference": "Multilingual Jailbreak Challenges in Large Language Models"
+        },
+        {
+          "category": "Data Curation",
+          "name": "Red Teaming Data",
+          "full_name": "Red Team Generated Training Data",
+          "description": "Include adversarial examples in training data with safe responses",
+          "effect": "Model learns to handle edge cases safely",
+          "reference": "Learning diverse attacks on large language models for robust red-teaming and safety tuning"
+        },
+        {
+          "category": "Adversarial Training",
+          "name": "Adversarial Training",
+          "full_name": "Adversarial Robustness Training",
+          "description": "Train on adversarial examples to improve robustness against attacks",
+          "effect": "Better resistance to jailbreak attempts",
+          "reference": "Robust LLM safeguarding via refusal feature adversarial training"
+        }
+      ],
+      "evaluation_metrics": [
+        "Toxicity score",
+        "Bias detection metrics",
+        "Harmful content rate",
+        "Red team attack success rate",
+        "Jailbreak resistance rate"
+      ]
+    },
+    "Knowledge Error": {
+      "display_name": "Knowledge Error",
+      "description": "The model fails to correctly recall factual information, misremembers facts, or confuses similar concepts.",
+      "quick_fixes": [
+        "Verify facts against reliable sources",
+        "Cross-reference with authoritative databases",
+        "Correct factual inaccuracies",
+        "Add citations for claims",
+        "Use RAG to ground responses in documents",
+        "Ask model to express uncertainty about unsure facts"
+      ],
+      "test_time_methods": [
+        {
+          "category": "Retrieval Augmentation",
+          "name": "RAG",
+          "full_name": "Retrieval-Augmented Generation",
+          "description": "Augment model with external knowledge retrieval at inference time",
+          "effect": "Grounds responses in retrieved documents, reduces factual errors",
+          "reference": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks, Retrieval-Augmented Generation for Large Language Models: A Survey",
+          "implementation": "Retrieve relevant documents and include in context"
+        },
+        {
+          "category": "Retrieval Augmentation",
+          "name": "Advanced RAG",
+          "full_name": "Advanced RAG with Reranking",
+          "description": "Use query rewriting, reranking, and iterative retrieval for better context",
+          "effect": "Higher quality retrieved context for complex queries",
+          "reference": "Retrieval-Augmented Generation for Large Language Models: A Survey",
+          "implementation": "Implement query expansion, reranking, and multi-hop retrieval"
+        },
+        {
+          "category": "Self-Consistency",
+          "name": "Self-Consistency Check",
+          "full_name": "Multi-Sample Consistency Verification",
+          "description": "Generate multiple responses and check for factual consistency across them",
+          "effect": "Identifies uncertain or inconsistent factual claims",
+          "reference": "Self-Consistency Improves Chain of Thought Reasoning in Language Models",
+          "implementation": "Sample multiple times and compare factual claims"
+        },
+        {
+          "category": "Verification",
+          "name": "Fact Verification API",
+          "full_name": "External Fact Checking",
+          "description": "Use external APIs or knowledge bases to verify factual claims",
+          "effect": "Real-time fact verification against authoritative sources",
+          "reference": "LLM-Cite: Cheap Fact Verification with Attribution via URL Generation",
+          "implementation": "Integrate fact-checking APIs like Wikipedia, Wikidata"
+        },
+        {
+          "category": "Uncertainty",
+          "name": "Uncertainty Prompting",
+          "full_name": "Epistemic Uncertainty Elicitation",
+          "description": "Prompt model to express uncertainty about facts it's unsure of",
+          "effect": "Model admits when it doesn't know, reducing confident errors",
+          "reference": "Can Large Language Models Express Uncertainty Like Human?",
+          "implementation": "Add instructions to express uncertainty in system prompt"
+        },
+        {
+          "category": "Multi-Source",
+          "name": "Multi-Source Verification",
+          "full_name": "Cross-Source Fact Checking",
+          "description": "Retrieve from multiple sources and check agreement",
+          "effect": "Higher confidence in facts supported by multiple sources",
+          "reference": "FIRE: Fact-checking with Iterative Retrieval and Verification",
+          "implementation": "Query multiple knowledge sources and aggregate results"
+        }
+      ],
+      "training_methods": [
+        {
+          "category": "Retrieval Augmentation",
+          "name": "REALM",
+          "full_name": "Retrieval-Augmented Language Model Pre-training",
+          "description": "Pre-train with retrieval mechanism integrated",
+          "effect": "Better knowledge integration during training",
+          "reference": "REALM: Retrieval-Augmented Language Model Pre-Training"
+        },
+        {
+          "category": "Knowledge Injection",
+          "name": "Knowledge Distillation",
+          "full_name": "Structured Knowledge Distillation",
+          "description": "Distill knowledge from knowledge graphs into model",
+          "effect": "Improved factual consistency",
+          "reference": "Implicit Chain of Thought Reasoning via Knowledge Distillation"
+        },
+        {
+          "category": "Knowledge Injection",
+          "name": "Continual Learning",
+          "full_name": "Continual Knowledge Updates",
+          "description": "Periodically update model with new factual information",
+          "effect": "Keeps knowledge current",
+          "reference": "Investigating Continual Pretraining in Large Language Models: Insights and Implications"
+        },
+        {
+          "category": "Verification",
+          "name": "Self-Consistency",
+          "full_name": "Self-Consistency Checking",
+          "description": "Generate multiple responses and check for factual consistency",
+          "effect": "Reduces confidence in incorrect facts",
+          "reference": "Self-Consistency Improves Chain of Thought Reasoning in Language Models"
+        },
+        {
+          "category": "Verification",
+          "name": "Fact Verification Layer",
+          "full_name": "External Fact Verification",
+          "description": "Use external APIs to verify factual claims",
+          "effect": "Real-time fact checking",
+          "reference": "FIRE: Fact-checking with Iterative Retrieval and Verification"
+        }
+      ],
+      "evaluation_metrics": [
+        "Factual accuracy rate",
+        "Knowledge retrieval precision",
+        "Temporal knowledge accuracy",
+        "Entity confusion rate",
+        "Source attribution accuracy"
+      ]
+    },
+    "Logical Error": {
+      "display_name": "Logical Error",
+      "description": "The reasoning contains flawed logic, invalid inferences, non-sequiturs, or internal contradictions.",
+      "quick_fixes": [
+        "Review the logical chain of reasoning",
+        "Check for contradictions with earlier statements",
+        "Ensure conclusions follow from premises",
+        "Validate cause-effect relationships",
+        "Use structured reasoning prompts",
+        "Apply step-by-step verification"
+      ],
+      "test_time_methods": [
+        {
+          "category": "Prompt Engineering",
+          "name": "Chain-of-Thought",
+          "full_name": "Chain-of-Thought Prompting",
+          "description": "Prompt model to show step-by-step reasoning",
+          "effect": "Improves logical reasoning by making steps explicit",
+          "reference": "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models",
+          "implementation": "Add 'Let's think step by step' or provide reasoning examples"
+        },
+        {
+          "category": "Prompt Engineering",
+          "name": "Zero-Shot-CoT",
+          "full_name": "Zero-Shot Chain-of-Thought",
+          "description": "Elicit reasoning without examples using simple prompt addition",
+          "effect": "10-40% accuracy improvement on reasoning tasks",
+          "reference": "Large Language Models are Zero-Shot Reasoners",
+          "implementation": "Append 'Let's think step by step' to prompts"
+        },
+        {
+          "category": "Tree Search",
+          "name": "Tree-of-Thought",
+          "full_name": "Tree-of-Thought Prompting",
+          "description": "Explore multiple reasoning paths and evaluate each using tree search",
+          "effect": "74% vs 4% on Game of 24 compared to CoT",
+          "reference": "Tree of Thoughts: Deliberate Problem Solving with Large Language Models",
+          "implementation": "Generate multiple thought branches, evaluate, and backtrack if needed"
+        },
+        {
+          "category": "Tree Search",
+          "name": "MCTS Reasoning",
+          "full_name": "Monte Carlo Tree Search for Reasoning",
+          "description": "Use MCTS to explore reasoning paths with value-guided search",
+          "effect": "Systematic exploration of reasoning space",
+          "reference": "ReST-MCTS*: LLM Self-Training via Process Reward Guided Tree Search, rStar-Math: Small LLMs Can Master Math Reasoning with Self-Evolved Deep Thinking",
+          "implementation": "Implement MCTS with LLM as policy and value function"
+        },
+        {
+          "category": "Tree Search",
+          "name": "LATS",
+          "full_name": "Language Agent Tree Search",
+          "description": "Combines MCTS with LLM reasoning, acting, and planning",
+          "effect": "92.7% pass@1 on HumanEval with GPT-4",
+          "reference": "Language Agent Tree Search Unifies Reasoning Acting and Planning in Language Models",
+          "implementation": "Integrate MCTS with LM-powered value functions and self-reflection"
+        },
+        {
+          "category": "Self-Correction",
+          "name": "Self-Refine",
+          "full_name": "Iterative Self-Refinement",
+          "description": "Model critiques and refines its own reasoning iteratively",
+          "effect": "~20% improvement across diverse tasks",
+          "reference": "Self-Refine: Iterative Refinement with Self-Feedback",
+          "implementation": "Generate → Critique → Refine loop until quality threshold met"
+        },
+        {
+          "category": "Self-Correction",
+          "name": "Self-Consistency",
+          "full_name": "Self-Consistency Decoding",
+          "description": "Sample multiple reasoning paths and take majority vote on answer",
+          "effect": "Reduces logical errors through ensemble effect",
+          "reference": "Self-Consistency Improves Chain of Thought Reasoning in Language Models",
+          "implementation": "Sample N responses with temperature, aggregate via majority vote"
+        },
+        {
+          "category": "Verification",
+          "name": "Step Verification",
+          "full_name": "Step-by-Step Verification",
+          "description": "Verify each reasoning step using a verifier model",
+          "effect": "Catches logical errors in intermediate steps",
+          "reference": "Let's Verify Step by Step",
+          "implementation": "Use process reward model to score each step"
+        },
+        {
+          "category": "Best-of-N",
+          "name": "Best-of-N with Verifier",
+          "full_name": "Best-of-N Selection with Reward Model",
+          "description": "Generate N solutions and select best using reward/verifier model",
+          "effect": "Filters out solutions with logical errors",
+          "reference": "Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters",
+          "implementation": "Sample N times, score with verifier, select highest"
+        }
+      ],
+      "training_methods": [
+        {
+          "category": "Structured Reasoning",
+          "name": "CoT Fine-tuning",
+          "full_name": "Chain-of-Thought Fine-tuning",
+          "description": "Fine-tune on high-quality step-by-step reasoning data",
+          "effect": "Improves logical flow in reasoning",
+          "reference": "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models"
+        },
+        {
+          "category": "Process Supervision",
+          "name": "PRM Training",
+          "full_name": "Process Reward Model Training",
+          "description": "Train reward model to evaluate each reasoning step",
+          "effect": "Better detection of logical errors during generation",
+          "reference": "Let's Verify Step by Step"
+        },
+        {
+          "category": "Self-Training",
+          "name": "ReST-MCTS*",
+          "full_name": "Reinforced Self-Training with MCTS",
+          "description": "Use MCTS to generate high-quality training data for self-improvement",
+          "effect": "Continuous improvement through self-play",
+          "reference": "ReST-MCTS*: LLM Self-Training via Process Reward Guided Tree Search"
+        },
+        {
+          "category": "Self-Training",
+          "name": "rStar-Math",
+          "full_name": "Self-Evolved Deep Thinking",
+          "description": "Small LLMs learn deep thinking through MCTS-based self-evolution",
+          "effect": "7B model reaches 90% on MATH benchmark",
+          "reference": "rStar-Math: Small LLMs Can Master Math Reasoning with Self-Evolved Deep Thinking"
+        },
+        {
+          "category": "Logic Training",
+          "name": "Formal Logic Dataset",
+          "full_name": "Training on Formal Logic Problems",
+          "description": "Include formal logic puzzles in training data",
+          "effect": "Better understanding of logical structures",
+          "reference": "Large Language Models Meet Symbolic Provers for Logical Reasoning Evaluation"
+        }
+      ],
+      "evaluation_metrics": [
+        "Logical consistency score",
+        "Contradiction detection rate",
+        "Valid inference rate",
+        "Reasoning chain coherence",
+        "Step-by-step accuracy"
+      ]
+    },
+    "Formal Error": {
+      "display_name": "Formal Error",
+      "description": "Calculation or computation mistakes, including arithmetic errors, unit conversion errors, or formula application errors.",
+      "quick_fixes": [
+        "Recalculate using correct formulas",
+        "Verify arithmetic step by step",
+        "Use calculator for complex computations",
+        "Double-check units and conversions",
+        "Use code interpreter for verification",
+        "Apply dimensional analysis"
+      ],
+      "test_time_methods": [
+        {
+          "category": "Tool Use",
+          "name": "Calculator Tool",
+          "full_name": "External Calculator Tool",
+          "description": "Offload arithmetic to external calculator tool",
+          "effect": "Eliminates arithmetic errors completely",
+          "reference": "Toolformer: Language Models Can Teach Themselves to Use Tools",
+          "implementation": "Enable tool calling for calculator functions"
+        },
+        {
+          "category": "Tool Use",
+          "name": "Code Interpreter",
+          "full_name": "Python Code Execution",
+          "description": "Execute Python code for complex calculations",
+          "effect": "Accurate computation with full verification",
+          "reference": "OpenAI Code Interpreter",
+          "implementation": "Generate and execute Python code for math operations"
+        },
+        {
+          "category": "Tool Use",
+          "name": "Symbolic Math",
+          "full_name": "Symbolic Mathematics Engine",
+          "description": "Use symbolic math tools like SymPy for algebraic manipulation",
+          "effect": "Precise symbolic computation without numerical errors",
+          "reference": "ASyMOB: Algebraic Symbolic Mathematical Operations Benchmark",
+          "implementation": "Integrate SymPy or Mathematica for symbolic operations"
+        },
+        {
+          "category": "Verification",
+          "name": "Unit Verification",
+          "full_name": "Dimensional Analysis Check",
+          "description": "Verify unit consistency throughout calculations at inference time",
+          "effect": "Catches unit conversion errors",
+          "reference": "VerityMath: Advancing Mathematical Reasoning by Self-Verification Through Unit Consistency",
+          "implementation": "Check dimensional consistency of equations"
+        }
+      ],
+      "training_methods": [
+        {
+          "category": "Tool Training",
+          "name": "Toolformer",
+          "full_name": "Toolformer Self-Supervised Tool Learning",
+          "description": "Train model to decide when to use external tools",
+          "effect": "Model learns when to offload to calculator",
+          "reference": "Toolformer: Language Models Can Teach Themselves to Use Tools"
+        },
+        {
+          "category": "Training Enhancement",
+          "name": "Math SFT",
+          "full_name": "Mathematical SFT Data",
+          "description": "Fine-tune on high-quality mathematical reasoning data",
+          "effect": "Better formula application and arithmetic",
+          "reference": "ASyMOB: Algebraic Symbolic Mathematical Operations Benchmark"
+        },
+        {
+          "category": "Process Supervision",
+          "name": "Math PRM",
+          "full_name": "Math Process Reward Model",
+          "description": "Train PRM specifically for mathematical reasoning steps",
+          "effect": "Catches calculation errors during reasoning",
+          "reference": "Let's Verify Step by Step"
+        },
+        {
+          "category": "Code Generation",
+          "name": "Code-Augmented Training",
+          "full_name": "Code-Augmented Math Training",
+          "description": "Train on data that uses code for calculations",
+          "effect": "Model learns to generate verifiable code",
+          "reference": "rStar-Math: Small LLMs Can Master Math Reasoning with Self-Evolved Deep Thinking"
+        }
+      ],
+      "evaluation_metrics": [
+        "Arithmetic accuracy",
+        "Formula application correctness",
+        "Unit conversion accuracy",
+        "Step-by-step calculation verification",
+        "Tool usage appropriateness"
+      ]
+    },
+    "Hallucination": {
+      "display_name": "Hallucination",
+      "description": "The model generates fabricated information, invents non-existent sources, or claims false details with high confidence.",
+      "quick_fixes": [
+        "Verify all claims against known facts",
+        "Remove fabricated information",
+        "Request source citations",
+        "Cross-reference with reliable data",
+        "Use RAG to ground responses",
+        "Check confidence calibration"
+      ],
+      "test_time_methods": [
+        {
+          "category": "Retrieval Grounding",
+          "name": "RAG",
+          "full_name": "Retrieval-Augmented Generation",
+          "description": "Ground responses in retrieved documents at inference time",
+          "effect": "Reduces hallucination by providing factual source material",
+          "reference": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks, Retrieval-Augmented Generation for Large Language Models: A Survey",
+          "implementation": "Retrieve relevant documents and include in context"
+        },
+        {
+          "category": "Retrieval Grounding",
+          "name": "MIRAGE",
+          "full_name": "Model Internals-based RAG Explanations",
+          "description": "Use model internals for faithful answer attribution in RAG",
+          "effect": "Better source attribution and reduced hallucination",
+          "reference": "Model Internals-based Answer Attribution for Trustworthy Retrieval-Augmented Generation",
+          "implementation": "Analyze model attention for source attribution"
+        },
+        {
+          "category": "Self-Consistency",
+          "name": "SelfCheckGPT",
+          "full_name": "Self-Consistency Hallucination Detection",
+          "description": "Sample multiple responses and detect inconsistencies as likely hallucinations",
+          "effect": "Identifies claims that vary across samples",
+          "reference": "SelfCheckGPT: Zero-Resource Black-Box Hallucination Detection for Generative Large Language Models",
+          "implementation": "Generate multiple samples, compare factual claims"
+        },
+        {
+          "category": "Uncertainty",
+          "name": "Verbalized Uncertainty",
+          "full_name": "Uncertainty Verbalization Prompting",
+          "description": "Prompt model to express confidence levels for claims",
+          "effect": "Highlights potentially unreliable information",
+          "reference": "Can Large Language Models Express Uncertainty Like Human?",
+          "implementation": "Add 'express your confidence level' to prompts"
+        },
+        {
+          "category": "Uncertainty",
+          "name": "Token Probability",
+          "full_name": "Token Probability Analysis",
+          "description": "Analyze token probabilities to detect low-confidence generations",
+          "effect": "Identifies uncertain/potentially hallucinated content",
+          "reference": "Uncertainty Quantification and Confidence Calibration in Large Language Models",
+          "implementation": "Monitor log probabilities during generation"
+        },
+        {
+          "category": "Verification",
+          "name": "Citation Verification",
+          "full_name": "Source Citation Verification",
+          "description": "Verify that cited sources exist and contain claimed information",
+          "effect": "Catches fabricated citations",
+          "reference": "LLM-Cite: Cheap Fact Verification with Attribution via URL Generation",
+          "implementation": "Check cited sources against knowledge bases"
+        },
+        {
+          "category": "Multi-Agent",
+          "name": "Tool-MAD",
+          "full_name": "Multi-Agent Debate with Tool Augmentation",
+          "description": "Engage multiple LLM agents in debate with external tool usage and adaptive retrieval to verify factual claims",
+          "effect": "Improves fact verification accuracy and reduces hallucinations",
+          "reference": "Tool-MAD: A Multi-Agent Debate Framework for Fact Verification with Diverse Tool Augmentation and Adaptive Retrieval",
+          "implementation": "Assign agents different tools (search API, RAG) and iteratively refine evidence during debate"
+        }
+      ],
+      "training_methods": [
+        {
+          "category": "Grounding",
+          "name": "Attribution Training",
+          "full_name": "Attribution-Aware Training",
+          "description": "Train model to cite sources and express uncertainty",
+          "effect": "Better calibrated confidence and source attribution",
+          "reference": "Source-Aware Training Enables Knowledge Attribution in Language Models"
+        },
+        {
+          "category": "Self-Awareness",
+          "name": "Uncertainty Quantification",
+          "full_name": "Uncertainty-Aware Training",
+          "description": "Train model to express uncertainty when unsure",
+          "effect": "Model says 'I don't know' appropriately",
+          "reference": "Uncertainty Quantification and Confidence Calibration in Large Language Models: A Survey"
+        },
+        {
+          "category": "Self-Awareness",
+          "name": "Confidence Calibration",
+          "full_name": "Confidence Calibration Training",
+          "description": "Calibrate model confidence with actual accuracy",
+          "effect": "Reduces overconfident hallucinations",
+          "reference": "Graph-based Confidence Calibration for Large Language Models"
+        },
+        {
+          "category": "Detection",
+          "name": "SelfCheckGPT",
+          "full_name": "Self-Consistency Hallucination Detection",
+          "description": "Sample multiple responses and detect inconsistencies",
+          "effect": "Identifies likely hallucinations",
+          "reference": "SelfCheckGPT: Zero-Resource Black-Box Hallucination Detection for Generative Large Language Models"
+        },
+        {
+          "category": "RLHF",
+          "name": "Factuality RLHF",
+          "full_name": "RLHF with Factuality Reward",
+          "description": "Use factuality as part of reward signal",
+          "effect": "Model learns to avoid fabrication",
+          "reference": "Train for Truth, Keep the Skills: Binary Retrieval-Augmented Reward Mitigates Hallucinations"
+        }
+      ],
+      "evaluation_metrics": [
+        "Hallucination rate",
+        "Source attribution accuracy",
+        "Confidence calibration",
+        "Factual grounding score",
+        "Self-consistency rate"
+      ]
+    },
+    "Readability": {
+      "display_name": "Readability",
+      "description": "The response has poor structure, confusing organization, unclear explanations, or formatting issues.",
+      "quick_fixes": [
+        "Restructure for clarity",
+        "Break down complex sentences",
+        "Add transitional phrases",
+        "Improve organization and flow",
+        "Use formatting instructions in prompts",
+        "Apply post-processing for structure"
+      ],
+      "test_time_methods": [
+        {
+          "category": "Prompt Engineering",
+          "name": "Format Instructions",
+          "full_name": "Structured Format Instructions",
+          "description": "Include detailed formatting instructions in prompts",
+          "effect": "Better adherence to desired structure",
+          "reference": "Improving Large Language Models Function Calling and Interpretability via Guided-Structured Templates",
+          "implementation": "Specify output format, headings, bullet points in system prompt"
+        },
+        {
+          "category": "Self-Refinement",
+          "name": "Clarity Refinement",
+          "full_name": "Self-Refinement for Clarity",
+          "description": "Ask model to rewrite its output for better clarity",
+          "effect": "Improved readability through self-editing",
+          "reference": "Self-Refine: Iterative Refinement with Self-Feedback",
+          "implementation": "Generate → Ask to improve clarity → Output refined version"
+        }
+      ],
+      "training_methods": [
+        {
+          "category": "Style Training",
+          "name": "Style SFT",
+          "full_name": "Style-Focused Fine-tuning",
+          "description": "Fine-tune on well-structured, clear writing examples",
+          "effect": "Improves output clarity and organization",
+          "reference": "TemplateRL: Structured Template-Guided Reinforcement Learning for LLM Reasoning"
+        },
+        {
+          "category": "Style Training",
+          "name": "Instruction Following",
+          "full_name": "Enhanced Instruction Following",
+          "description": "Train to follow formatting and structure instructions",
+          "effect": "Better adherence to requested format",
+          "reference": "LogiCoT: Logical Chain-of-Thought Instruction Tuning"
+        }
+      ],
+      "evaluation_metrics": [
+        "Readability score (Flesch-Kincaid)",
+        "Structure coherence",
+        "Format consistency",
+        "User comprehension rate",
+        "Instruction following accuracy"
+      ]
+    }
+  },
+  "categories": {
+    "test_time": {
+      "Prompt Engineering": {
+        "description": "Techniques that modify prompts to improve reasoning without training",
+        "applicable_to": [
+          "Overthinking",
+          "Logical Error",
+          "Readability"
+        ],
+        "requires_training": false
+      },
+      "Tree Search": {
+        "description": "Explore multiple reasoning paths using search algorithms at inference",
+        "applicable_to": [
+          "Logical Error"
+        ],
+        "requires_training": false
+      },
+      "Self-Correction": {
+        "description": "Model critiques and refines its own outputs iteratively",
+        "applicable_to": [
+          "Logical Error",
+          "Readability"
+        ],
+        "requires_training": false
+      },
+      "Best-of-N": {
+        "description": "Sample multiple responses and select the best one",
+        "applicable_to": [
+          "Overthinking",
+          "Logical Error"
+        ],
+        "requires_training": false
+      },
+      "Retrieval Grounding": {
+        "description": "Augment with external knowledge retrieval at inference time",
+        "applicable_to": [
+          "Knowledge Error",
+          "Hallucination"
+        ],
+        "requires_training": false
+      },
+      "Tool Use": {
+        "description": "Use external tools (calculators, code interpreters) at inference",
+        "applicable_to": [
+          "Formal Error"
+        ],
+        "requires_training": false
+      },
+      "Output Filtering": {
+        "description": "Filter or modify outputs post-generation",
+        "applicable_to": [
+          "Safety"
+        ],
+        "requires_training": false
+      },
+      "Self-Consistency": {
+        "description": "Sample multiple times and check consistency",
+        "applicable_to": [
+          "Knowledge Error",
+          "Hallucination",
+          "Logical Error"
+        ],
+        "requires_training": false
+      },
+      "Decoding Strategy": {
+        "description": "Modify decoding parameters for better outputs",
+        "applicable_to": [
+          "Overthinking"
+        ],
+        "requires_training": false
+      }
+    },
+    "training": {
+      "RL-based Length Reward": {
+        "description": "Methods using reinforcement learning with length penalties",
+        "applicable_to": [
+          "Overthinking"
+        ],
+        "requires_training": true
+      },
+      "SFT-based Variable Length CoT": {
+        "description": "Supervised fine-tuning on variable length chain-of-thought data",
+        "applicable_to": [
+          "Overthinking"
+        ],
+        "requires_training": true
+      },
+      "Latent Space Reasoning": {
+        "description": "Compress reasoning into latent representations",
+        "applicable_to": [
+          "Overthinking"
+        ],
+        "requires_training": true
+      },
+      "RLHF Safety Alignment": {
+        "description": "RLHF techniques for safety alignment",
+        "applicable_to": [
+          "Safety"
+        ],
+        "requires_training": true
+      },
+      "Process Supervision": {
+        "description": "Train reward models to evaluate reasoning steps",
+        "applicable_to": [
+          "Logical Error",
+          "Formal Error"
+        ],
+        "requires_training": true
+      },
+      "Self-Training": {
+        "description": "Model improves through self-generated training data",
+        "applicable_to": [
+          "Logical Error"
+        ],
+        "requires_training": true
+      },
+      "Knowledge Injection": {
+        "description": "Inject structured knowledge during training",
+        "applicable_to": [
+          "Knowledge Error"
+        ],
+        "requires_training": true
+      },
+      "Confidence Calibration": {
+        "description": "Train models to have well-calibrated confidence",
+        "applicable_to": [
+          "Hallucination"
+        ],
+        "requires_training": true
+      }
+    }
+  }
 }

@@ -294,6 +294,28 @@ export const generateAnalysisReport = async (
 // Error Solutions Knowledge Base API
 // =============================================================================
 
+export interface CitationInfo {
+	paper_title: string;
+	entry_type?: string;
+	cite_key?: string;
+	authors: string[];
+	short_authors: string;
+	year: string;
+	title: string;
+	venue: string;
+	doi: string;
+	url: string;
+	pages: string;
+	volume: string;
+	number: string;
+	publisher: string;
+	eprint: string;
+	archiveprefix: string;
+	inline_citation: string;
+	formatted_citation: string;
+	raw_bibtex: string;
+}
+
 export interface TrainingMethod {
 	category: string;
 	name: string;
@@ -301,6 +323,7 @@ export interface TrainingMethod {
 	description: string;
 	effect?: string;
 	reference?: string | null;
+	citation_info?: CitationInfo[];
 	difficulty: 'beginner' | 'intermediate' | 'advanced';
 }
 
@@ -311,6 +334,7 @@ export interface TestTimeMethod {
 	description: string;
 	effect?: string;
 	reference?: string | null;
+	citation_info?: CitationInfo[];
 	difficulty: 'beginner' | 'intermediate' | 'advanced';
 	implementation?: string; // Implementation guidance for test-time methods
 }

@@ -8,6 +8,7 @@ The knowledge base contains training methods and quick fixes for different error
 import json
 import logging
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -17,6 +18,7 @@ log = logging.getLogger(__name__)
 # Path to the knowledge base JSON file
 DATA_DIR = Path(__file__).parent.parent / "data"
 KNOWLEDGE_BASE_FILE = DATA_DIR / "error_solutions.json"
+PAPER_BIBTEX_FILE = DATA_DIR / "paper_bibtex.json"
 
 
 class ErrorSolutionsKnowledgeBase:
@@ -32,6 +34,8 @@ class ErrorSolutionsKnowledgeBase:
 
     _instance: Optional["ErrorSolutionsKnowledgeBase"] = None
     _data: Optional[Dict[str, Any]] = None
+    _bibtex_data: Optional[Dict[str, str]] = None
+    _parsed_citations: Optional[Dict[str, Dict[str, Any]]] = None
     _last_loaded: Optional[datetime] = None
 
     def __new__(cls) -> "ErrorSolutionsKnowledgeBase":
@@ -44,6 +48,8 @@ class ErrorSolutionsKnowledgeBase:
         """Initialize the knowledge base."""
         if self._data is None:
             self._load()
+        if self._bibtex_data is None:
+            self._load_bibtex()
 
     def _load(self) -> None:
         """Load the knowledge base from the JSON file."""
@@ -61,6 +67,188 @@ class ErrorSolutionsKnowledgeBase:
         except Exception as e:
             log.error("Failed to load knowledge base: %s", e)
             self._data = self._get_default_data()
+
+    def _load_bibtex(self) -> None:
+        """Load the paper BibTeX data from the JSON file."""
+        try:
+            if PAPER_BIBTEX_FILE.exists():
+                with open(PAPER_BIBTEX_FILE, "r", encoding="utf-8") as f:
+                    self._bibtex_data = json.load(f)
+                self._parsed_citations = {}
+                for title, bibtex_str in self._bibtex_data.items():
+                    self._parsed_citations[title] = self._parse_bibtex(bibtex_str, title)
+                log.info("Loaded paper BibTeX data: %d entries", len(self._bibtex_data))
+            else:
+                log.warning("Paper BibTeX file not found: %s", PAPER_BIBTEX_FILE)
+                self._bibtex_data = {}
+                self._parsed_citations = {}
+        except Exception as e:
+            log.error("Failed to load paper BibTeX data: %s", e)
+            self._bibtex_data = {}
+            self._parsed_citations = {}
+
+    @staticmethod
+    def _parse_bibtex(bibtex_str: str, paper_title: str) -> Dict[str, Any]:
+        """
+        Parse a BibTeX string into a structured citation dict.
+        Extracts authors, year, title, venue, DOI, URL, etc.
+        """
+        citation = {
+            "raw_bibtex": bibtex_str,
+            "paper_title": paper_title,
+        }
+
+        # Extract entry type and cite key
+        type_match = re.match(r"@(\w+)\{([^,]+),", bibtex_str)
+        if type_match:
+            citation["entry_type"] = type_match.group(1).lower()
+            citation["cite_key"] = type_match.group(2).strip()
+
+        # Extract fields from bibtex
+        field_pattern = re.compile(r"(\w+)\s*=\s*\{([^}]*)\}", re.DOTALL)
+        fields = {}
+        for match in field_pattern.finditer(bibtex_str):
+            key = match.group(1).lower().strip()
+            value = match.group(2).strip()
+            fields[key] = value
+
+        # Parse authors into list
+        if "author" in fields:
+            raw_authors = fields["author"]
+            # Split by " and " to get individual authors
+            author_list = [a.strip() for a in re.split(r"\s+and\s+", raw_authors)]
+            citation["authors"] = author_list
+
+            # Build short citation: "Author1 et al." or "Author1 and Author2"
+            if len(author_list) == 1:
+                last_name = author_list[0].split(",")[0].strip() if "," in author_list[0] else author_list[0].split()[-1].strip()
+                citation["short_authors"] = last_name
+            elif len(author_list) == 2:
+                last1 = author_list[0].split(",")[0].strip() if "," in author_list[0] else author_list[0].split()[-1].strip()
+                last2 = author_list[1].split(",")[0].strip() if "," in author_list[1] else author_list[1].split()[-1].strip()
+                citation["short_authors"] = f"{last1} and {last2}"
+            else:
+                last_name = author_list[0].split(",")[0].strip() if "," in author_list[0] else author_list[0].split()[-1].strip()
+                citation["short_authors"] = f"{last_name} et al."
+        else:
+            citation["authors"] = []
+            citation["short_authors"] = "Unknown"
+
+        # Extract year
+        citation["year"] = fields.get("year", "")
+
+        # Extract title (from bibtex, may differ from paper_title key)
+        citation["title"] = fields.get("title", paper_title)
+
+        # Extract venue information
+        venue = ""
+        if "journal" in fields:
+            venue = fields["journal"]
+        elif "booktitle" in fields:
+            venue = fields["booktitle"]
+        citation["venue"] = venue
+
+        # Extract other useful fields
+        citation["doi"] = fields.get("doi", "")
+        citation["url"] = fields.get("url", "")
+        citation["pages"] = fields.get("pages", "")
+        citation["volume"] = fields.get("volume", "")
+        citation["number"] = fields.get("number", "")
+        citation["publisher"] = fields.get("publisher", "")
+        citation["eprint"] = fields.get("eprint", "")
+        citation["archiveprefix"] = fields.get("archiveprefix", "")
+
+        # Build the short inline citation: [Author et al., Year]
+        if citation["year"]:
+            citation["inline_citation"] = f"{citation['short_authors']}, {citation['year']}"
+        else:
+            citation["inline_citation"] = citation["short_authors"]
+
+        # Build full formatted citation (ACL/NeurIPS style)
+        parts = []
+        if citation["authors"]:
+            # Format: "Last1, First1, Last2, First2, ... and LastN, FirstN."
+            formatted_authors = "; ".join(citation["authors"][:3])
+            if len(citation["authors"]) > 3:
+                formatted_authors += " et al."
+            parts.append(formatted_authors + ".")
+
+        if citation["year"]:
+            parts.append(f"({citation['year']}).")
+
+        if citation["title"]:
+            parts.append(f"{citation['title']}.")
+
+        if venue:
+            parts.append(f"In {venue}.")
+
+        if citation["pages"]:
+            parts.append(f"pp. {citation['pages']}.")
+
+        citation["formatted_citation"] = " ".join(parts)
+
+        return citation
+
+    def get_citation_info(self, reference_title: str) -> Optional[Dict[str, Any]]:
+        """
+        Get parsed citation info for a paper reference title.
+        Handles comma-separated multiple references.
+        """
+        if not self._parsed_citations:
+            return None
+
+        # Direct match
+        if reference_title in self._parsed_citations:
+            return self._parsed_citations[reference_title]
+
+        # Try to find by partial/fuzzy match
+        ref_lower = reference_title.lower().strip()
+        for title, citation in self._parsed_citations.items():
+            if title.lower().strip() == ref_lower:
+                return citation
+
+        return None
+
+    def get_citations_for_reference(self, reference: str) -> List[Dict[str, Any]]:
+        """
+        Get citation info for a reference string which may contain
+        multiple comma-separated paper titles.
+        """
+        if not reference:
+            return []
+
+        # Try direct match first (entire string)
+        direct = self.get_citation_info(reference)
+        if direct:
+            return [direct]
+
+        # Split by comma and try each part
+        parts = [p.strip() for p in reference.split(",") if p.strip()]
+        if len(parts) <= 1:
+            return [direct] if direct else []
+
+        citations = []
+        for part in parts:
+            c = self.get_citation_info(part)
+            if c:
+                citations.append(c)
+
+        return citations
+
+    def _enrich_methods_with_citations(self, methods: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Add citation_info field to each method that has a reference.
+        """
+        enriched = []
+        for method in methods:
+            method = dict(method)  # Don't mutate original
+            ref = method.get("reference")
+            if ref:
+                citations = self.get_citations_for_reference(ref)
+                if citations:
+                    method["citation_info"] = citations
+            enriched.append(method)
+        return enriched
 
     def _get_default_data(self) -> Dict[str, Any]:
         """Return default minimal data structure."""
@@ -97,6 +285,7 @@ class ErrorSolutionsKnowledgeBase:
     def reload(self) -> None:
         """Force reload the knowledge base from disk."""
         self._load()
+        self._load_bibtex()
 
     def get_all_error_types(self) -> List[str]:
         """Get list of all error types in the knowledge base."""
@@ -314,8 +503,10 @@ class ErrorSolutionsKnowledgeBase:
                 "evaluation_metrics": [],
             }
 
-        # Get test-time methods (no training required)
-        test_time_methods = info.get("test_time_methods", [])
+        # Get test-time methods (no training required) and enrich with citations
+        test_time_methods = self._enrich_methods_with_citations(
+            info.get("test_time_methods", [])
+        )
         test_time_categories = {}
         for method in test_time_methods:
             cat = method.get("category", "Other")
@@ -323,8 +514,10 @@ class ErrorSolutionsKnowledgeBase:
                 test_time_categories[cat] = []
             test_time_categories[cat].append(method)
 
-        # Get training methods
-        training_methods = info.get("training_methods", [])
+        # Get training methods and enrich with citations
+        training_methods = self._enrich_methods_with_citations(
+            info.get("training_methods", [])
+        )
         training_categories = {}
         for method in training_methods:
             cat = method.get("category", "Other")
