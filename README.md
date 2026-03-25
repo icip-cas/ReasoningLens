@@ -58,11 +58,12 @@ Most CoT tokens are just "execution" (doing the math), while only a few are "str
 
 ### 2. Agentic Diagnosis
 
-Longer reasoning doesn't always mean better reasoning. "Length-scaling" can introduce hallucinations that are hard to spot. Our **Agentic Diagnosis** acts as a specialized auditor for your traces:
+Longer reasoning doesn't always mean better reasoning. "Length-scaling" can introduce subtle errors and hallucinations that are difficult to localize. Our **Agentic Diagnosis** serves as a specialized auditor that supports a full diagnose-verify-repair workflow:
 
 - **⚡ Batch-wise Analysis:** Efficiently parses massive traces without losing context, making large-scale debugging feasible.
 - **🧠 Rolling Summary Memory:** Remembers context from prior sections, catching non-local inconsistencies and logical drift that would exhaust a human reviewer.
 - **🧮 Tool-Augmented Verification:** Tired of models failing at basic math? ReasoningLens integrates a calculator to verify arithmetic steps automatically.
+- **🛠️ Error Repair Suggestions:** Beyond flagging issues, ReasoningLens generates actionable fix proposals (e.g., revising intermediate assumptions, replacing invalid transformations, or re-running specific sub-steps with tool checks), so developers can move from error detection to targeted correction faster.
 
 ---
 
