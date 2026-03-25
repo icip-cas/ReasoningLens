@@ -1,8 +1,6 @@
-# 🔍 ReasoningLens
+# 🔍 REASONINGLENS：大型推理模型的层级可视化与诊断审计
 
 <div align="center">
-
-### **Escape the "CoT Maze": Unmasking Model Reasoning at a Glance**
 
 ![reasoninglens-github](assets/reasoninglens-github.png)
 
@@ -10,92 +8,92 @@
 [![Python](https://img.shields.io/badge/python-3.11+-green.svg)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/node.js-22.10+-green.svg)](https://nodejs.org/)
 
-[**🇬🇧 English**](README.md) | [**中文**](#-reasoninglens)
+[安装](#安装) · [系统概览](#系统概览) · [许可证](#许可证)
+
+[**English**](README.md) | [**🇨🇳 中文文档**](README_CN.md)
 
 </div>
 
 ---
 
-> **太长不看：** 长链推理（CoT）是一把双刃剑。虽然 OpenAI o1 和 DeepSeek-R1 等模型比以往更加智能，但调试一个 10,000 token 的推理轨迹简直是噩梦。**ReasoningLens** 将「文字墙」转化为交互式的层级结构图。
+> **TL;DR:** 长链推理（CoT）是一把双刃剑。虽然 OpenAI o1 和 DeepSeek-R1 等模型比以往更强，但调试一条 10,000 token 的推理轨迹依旧像噩梦。**ReasoningLens** 将这堵“文字墙”转化为可交互的层级推理可视化图。
 
-https://github.com/user-attachments/assets/f85a110f-d800-4a70-9f50-ffb16552987f
+## 问题：当透明度变成负担
 
+**大型推理模型（LRMs）** 时代已经到来。我们受益于它们的自我纠错与规划能力，但也遇到了新的难题：**要理解模型究竟是*如何*得到结论，正变得越来越困难。**
 
-## 🤯 问题：当透明度成为负担
+当模型输出超长推理轨迹时，真正关键的逻辑往往被大量重复的过程步骤淹没。想定位一次幻觉、一次策略转向，几乎像在大海里找针。
 
-**大型推理模型（LRMs）** 的时代已经到来。我们喜欢它们自我纠正和规划的能力，但有一个问题：**理解模型*如何*得出结论变得越来越困难。**
+## ReasoningLens 简介
 
-当模型产生海量推理轨迹时，「关键」逻辑往往被淹没在重复的过程性步骤中。找到一个幻觉或逻辑转折点，就像大海捞针一样困难。
+ReasoningLens 基于 **[Open WebUI](https://github.com/open-webui/open-webui.git)** 构建，是一套面向开发者的工具链，帮助开源社区在不被长链推理“劝退”的前提下，**可视化、理解并调试**模型推理过程。
 
+> **“ReasoningLens 不只展示模型说了什么，更展示模型是*如何思考*的。”**
 
-## 💡 ReasoningLens 简介
+---
 
-基于 **[Open WebUI](https://github.com/open-webui/open-webui.git)** 构建，ReasoningLens 是一个面向开发者的工具包，旨在帮助开源社区**可视化、理解和调试**模型推理链，而不会让人抓狂。
+## 系统概览
+![reasoninglens-github](assets/framework.png)
 
-> **「ReasoningLens 不仅展示模型说了什么，更展示模型*如何思考*。」**
+REASONINGLENS 由三个核心模块组成：
 
-<div align="center">
-<img src="assets/reasoninglens-framework.png" alt="ReasoningLens 框架" width="800"/>
-</div>
+### 1. 层级可视化（Hierarchical Visualization）
 
+大部分 CoT token 属于“执行层”（算数、替换、展开），而真正决定方向变化的“策略层”只占少数。ReasoningLens 的目标是把信号从噪声里分离出来：
 
-## ✨ 核心功能
-
-### 🗺️ 层级可视化：从混乱到清晰
-
-大多数 CoT token 只是「执行」（进行计算），而只有少数是「策略性」的（决定改变方向）。ReasoningLens 将信号从噪声中分离出来：
-
-- **规划单元分割：** 我们自动检测逻辑关键词，如 *「等等，让我重新检查...」* 或 *「或者...」*。
-- **宏观视图（探索）：** 查看高层策略——模型在哪里回溯、在哪里验证、在哪里遇到困难。
-- **微观视图（执行）：** 仅在需要时深入查看具体的算术或替换步骤。
+- **规划单元切分：** 自动识别“等等我再检查一下…”“或者换一种思路…”等策略转折词。
+- **宏观视图（Exploration）：** 一眼看清模型在哪回溯、在哪验证、在哪受阻。
+- **微观视图（Exploitation）：** 仅在需要时下钻到具体计算或符号替换细节。
 
 <div align="center">
-<img src="assets/reasoning-structure.png" alt="层级可视化" width="800"/>
+<img src="assets/main_inferface.png" alt="层级可视化" width="800"/>
 </div>
 
-### 🕵️ 自动错误检测：「智能体」审计员
+---
 
-更长的推理并不总是意味着更好的推理。「长度扩展」可能引入难以发现的幻觉。我们的 **SectionAnalysisAgent** 充当你的推理轨迹的专业审计员：
+### 2. 智能体诊断（Agentic Diagnosis）
 
-- **⚡ 批量分析：** 高效解析海量推理轨迹而不丢失上下文，使大规模调试成为可能。
--	**🧠 滚动摘要记忆：** 记住前序部分的上下文，能够捕捉到人工审阅者容易忽略的非局部不一致和逻辑漂移。
--	**🧮 工具增强验证：** 还在为模型连基础数学都算错而头疼吗？ReasoningLens 集成了计算器，可自动验证算术推理步骤。
+推理更长不一定更好。“长度扩展”可能引入更隐蔽的幻觉与漂移。ReasoningLens 的 **Agentic Diagnosis** 将推理轨迹当作可审计对象进行系统化诊断：
+
+- **⚡ 分批分析：** 高效处理超长轨迹，兼顾规模与上下文连续性。
+- **🧠 滚动摘要记忆：** 记住前文关键状态，识别跨段落的逻辑漂移与不一致。
+- **🧮 工具增强校验：** 集成计算器自动核验算术步骤，减少“低级数学错误”漏检。
+
+---
+
+### 3. 系统画像（Systemic Profiling）
+
+单次调试有价值，但系统性模式更关键。ReasoningLens 会跨会话聚合数据，形成模型层面的稳定画像：
+
+1. **聚合（Aggregate）：** 收集不同任务域（编程、数学、逻辑）的推理轨迹。
+2. **压缩（Compress）：** 将重复模式提炼为紧凑的记忆状态。
+3. **报告（Report）：** 输出结构化 Markdown 报告，标出模型“盲区”与“稳定优势”。
 
 <div align="center">
-<img src="assets/automated-error-detection.png" alt="自动错误检测" width="800"/>
+<img src="assets/systemic_profiling.png" alt="系统画像" width="800"/>
 </div>
 
-### 📊 模型画像：超越单次轨迹
+---
 
-单次调试很好，但**系统性模式**更重要。ReasoningLens 聚合多个对话的数据，为你的模型构建**推理画像**：
+## 安装
 
-1. **聚合：** 跨不同领域（编程、数学、逻辑）收集轨迹。
-2. **压缩：** 将重复模式提炼成紧凑的记忆状态。
-3. **报告：** 生成结构化的 Markdown 报告，突出模型的「盲区」和「稳定优势」。
+### 先决条件
 
-<div align="center">
-<img src="assets/reasoning-profile.png" alt="模型画像" width="800"/>
-</div>
+- **Python 3.11+**
+- **Node.js 22.10+**
+- **Docker / Docker Compose**（容器化部署）
 
+---
 
-## 🚀 快速开始
+## 快速开始
 
-### 环境要求
+### 方式 1：本地开发
 
-- **Python**：版本 **3.11 或更高**（后端服务必需）
-- **Node.js**：版本 **22.10 或更高**（前端开发必需）
-- **Docker** 和 **Docker Compose**（容器化部署）
-
-
-## 📦 安装方式
-
-### 方式一：Conda 环境（开发模式）
-
-#### 1. 克隆仓库
+#### 克隆仓库
 
 ```bash
-git clone https://github.com/icip-cas/reasoning-lens.git
-cd reasoning-lens
+git clone https://github.com/icip-cas/ReasoningLens.git
+cd ReasoningLens
 ```
 
 #### 2. 后端配置
@@ -118,7 +116,7 @@ sh dev.sh
 
 #### 3. 前端配置
 
-打开新终端：
+打开一个新终端：
 
 ```bash
 # 安装前端依赖
@@ -130,8 +128,7 @@ npm run dev
 
 前端运行地址：`http://localhost:5173`
 
-
-### 方式二：Docker Compose（推荐）
+### 方式 2：Docker Compose（推荐）
 
 #### 快速启动
 
@@ -143,11 +140,11 @@ chmod +x dev-docker.sh
 ./dev-docker.sh
 ```
 
-这将自动：
+该脚本会自动完成：
 
 - 清理旧容器
 - 创建必要的数据卷
-- 启动前端和后端服务
+- 同时启动前端与后端服务
 
 **访问地址：**
 
@@ -157,7 +154,7 @@ chmod +x dev-docker.sh
 #### Docker 常用命令
 
 ```bash
-# 查看所有日志
+# 查看全部日志
 docker-compose -f docker-compose.dev.yaml logs -f
 
 # 仅查看后端日志
@@ -176,8 +173,7 @@ docker-compose -f docker-compose.dev.yaml restart backend
 docker-compose -f docker-compose.dev.yaml restart frontend
 ```
 
-
-### 方式三：Docker 构建（生产环境）
+### 方式 3：Docker 构建（生产环境）
 
 #### 构建 Docker 镜像
 
@@ -203,7 +199,7 @@ docker build --build-arg USE_SLIM=true -t reasoning-lens:slim .
 | `USE_CUDA_VER`        | `cu128`                                  | CUDA 版本（如 `cu117`、`cu121`、`cu128`） |
 | `USE_OLLAMA`          | `false`                                  | 在镜像中包含 Ollama                       |
 | `USE_SLIM`            | `false`                                  | 跳过预下载嵌入模型                        |
-| `USE_EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | RAG 的句子转换器模型                      |
+| `USE_EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | RAG 的句子向量模型                        |
 | `USE_RERANKING_MODEL` | `""`                                     | RAG 的重排序模型                          |
 
 #### 运行容器
@@ -229,48 +225,45 @@ docker run -d \
 
 | 变量                  | 说明                                  |
 | --------------------- | ------------------------------------- |
-| `OPENAI_API_KEY`      | 您的 OpenAI API 密钥                  |
+| `OPENAI_API_KEY`      | 你的 OpenAI API Key                   |
 | `OPENAI_API_BASE_URL` | 自定义 OpenAI 兼容 API 端点           |
-| `WEBUI_SECRET_KEY`    | 会话管理的密钥                        |
-| `DEFAULT_USER_ROLE`   | 新用户的默认角色（`user` 或 `admin`） |
+| `WEBUI_SECRET_KEY`    | 会话管理密钥                          |
+| `DEFAULT_USER_ROLE`   | 新用户默认角色（`user` 或 `admin`）   |
 
-
-## 🛠️ 开发指南
+## 开发
 
 ### 项目结构
 
-```
+```text
 reasoning-lens/
-├── backend/                 # Python 后端 (FastAPI)
-│   ├── open_webui/          # 主应用程序
+├── backend/                 # Python backend (FastAPI)
+│   ├── open_webui/          # 主应用
 │   │   ├── routers/         # API 路由
 │   │   ├── models/          # 数据模型
-│   │   └── utils/           # 工具函数
+│   │   └── utils/           # 工具模块
 │   └── requirements.txt     # Python 依赖
 ├── src/                     # Svelte 前端
 │   ├── lib/                 # 共享组件
 │   └── routes/              # 页面路由
 ├── static/                  # 静态资源
-├── Dockerfile               # 生产环境 Docker 构建文件
+├── Dockerfile               # 生产镜像构建文件
 ├── docker-compose.dev.yaml  # 开发环境 compose 文件
 ```
 
 ### 技术栈
 
-- **后端**：Python 3.11+、FastAPI、SQLAlchemy
-- **前端**：Svelte 5、TypeScript、TailwindCSS
-- **数据库**：SQLite（默认）、PostgreSQL（可选）
-- **容器化**：Docker、Docker Compose
+- **后端**：Python 3.11+, FastAPI, SQLAlchemy
+- **前端**：Svelte 5, TypeScript, TailwindCSS
+- **数据库**：SQLite（默认）, PostgreSQL（可选）
+- **容器化**：Docker, Docker Compose
 
+## 许可证
 
-## 📄 开源协议
+本项目采用 MIT License，详见 [LICENSE](LICENSE)。
 
-本项目基于 MIT 协议开源 - 详见 [LICENSE](LICENSE) 文件。
+## 引用
 
-
-## 📚 引用
-
-如果 ReasoningLens 对你的研究有帮助，请考虑引用：
+如果 ReasoningLens 对你的研究有帮助，欢迎引用：
 
 ```bibtex
 @software{Zhang_ReasoningLens_2026,
@@ -284,8 +277,7 @@ reasoning-lens/
 }
 ```
 
-
-## 👥 团队与贡献者
+## 团队与贡献
 
 - **Jun Zhang** - 主要贡献者
 - **Jiasheng Zheng** - 贡献者
@@ -294,8 +286,8 @@ reasoning-lens/
 
 ## 致谢
 
-我们感谢 **[Open WebUI](https://github.com/open-webui/open-webui.git)** 社区以及所有早期用户和贡献者所提供的反馈与支持。我们期待开源社区持续的贡献。正是你们的时间与好奇心，让 ReasoningLens 变得更加出色。
+感谢 **[Open WebUI](https://github.com/open-webui/open-webui.git)** 社区以及所有早期用户和贡献者的反馈与支持。我们期待与开源社区一起持续完善 ReasoningLens。
 
-## 💬 加入我们
+## 加入我们
 
-有问题或想讨论想法？在 GitHub 上提交 Issue 或加入我们的社区讨论！让我们携手为社区设计更有效的工具. 🌟
+有问题或想交流想法？欢迎在 GitHub 提交 Issue 或参与社区讨论。让我们一起打造更强大的推理调试工具。

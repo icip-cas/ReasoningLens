@@ -3,6 +3,7 @@ yarn.lock
 .DS_Store
 node_modules
 /evaluation
+/evaluation-1
 /build
 /.svelte-kit
 /package

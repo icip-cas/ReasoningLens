@@ -1,14 +1,15 @@
-# 🔍 ReasoningLens
+# 🔍 REASONINGLENS: Hierarchical Visualization and Diagnostic Auditing for Large Reasoning Models
 
 <div align="center">
 
-### **Escape the "CoT Maze": Unmasking Model Reasoning at a Glance**
 
 ![reasoninglens-github](assets/reasoninglens-github.png)
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-green.svg)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/node.js-22.10+-green.svg)](https://nodejs.org/)
+
+[Installation](#installation) · [System Overview](#system-overview) · [License](#license)
 
 [**English**](#-reasoninglens) | [**🇨🇳 中文文档**](README_CN.md)
 
@@ -17,8 +18,6 @@
 ---
 
 > **TL;DR:** Long-form reasoning (CoT) is a double-edged sword. While models like OpenAI o1 and DeepSeek-R1 are smarter than ever, debugging a 10,000-token reasoning trace is a nightmare. **ReasoningLens** turns that "Wall of Text" into an interactive, hierarchical map.
-
-https://github.com/user-attachments/assets/5ed8c14e-cc73-4b1c-8622-3c19cd7b9450
 
 ## 🤯 The Problem: When Transparency Becomes a Burden
 
@@ -33,14 +32,15 @@ Built on top of **[Open WebUI](https://github.com/open-webui/open-webui.git)**, 
 
 > **"ReasoningLens doesn't just show you what the model said; it shows you *how* the model thinks."**
 
-<div align="center">
-<img src="assets/reasoninglens-framework.png" alt="ReasoningLens Framework" width="800"/>
-</div>
+---
+
+## System Overview
+![reasoninglens-github](assets/framework.png)
 
 
-## ✨ Key Features
+REASONINGLENS consists of three core components:
 
-### 🗺️ Hierarchical Visualization: From Chaos to Clarity
+### 1. Hierarchical Visualization
 
 Most CoT tokens are just "execution" (doing the math), while only a few are "strategic" (deciding to change course). ReasoningLens separates the signal from the noise:
 
@@ -49,69 +49,64 @@ Most CoT tokens are just "execution" (doing the math), while only a few are "str
 - **The Micro View (Exploitation):** Dive deep into specific arithmetic or substitutions only when you need to.
 
 <div align="center">
-<img src="assets/reasoning-structure.png" alt="Hierarchical Visualization" width="800"/>
+<img src="assets/main_inferface.png" alt="Hierarchical Visualization" width="800"/>
 </div>
 
-### 🕵️ Automated Error Detection: The "Agentic" Auditor
+---
 
-Longer reasoning doesn't always mean better reasoning. "Length-scaling" can introduce hallucinations that are hard to spot. Our **SectionAnalysisAgent** acts as a specialized auditor for your traces:
+### 2. Agentic Diagnosis
+
+Longer reasoning doesn't always mean better reasoning. "Length-scaling" can introduce hallucinations that are hard to spot. Our **Agentic Diagnosis** acts as a specialized auditor for your traces:
 
 - **⚡ Batch-wise Analysis:** Efficiently parses massive traces without losing context, making large-scale debugging feasible.
 - **🧠 Rolling Summary Memory:** Remembers context from prior sections, catching non-local inconsistencies and logical drift that would exhaust a human reviewer.
 - **🧮 Tool-Augmented Verification:** Tired of models failing at basic math? ReasoningLens integrates a calculator to verify arithmetic steps automatically.
 
-<div align="center">
-<img src="assets/automated-error-detection.png" alt="Automated Error Detection" width="800"/>
-</div>
+---
 
+### 3. Systemic Profiling
 
-### 📊 Model Profiling: Beyond the Single Trace
-
-One-off debugging is great, but **systemic patterns** matter more. ReasoningLens aggregates data across multiple conversations to build a **Reasoning Profile** of your model:
+One-off debugging is great, but **systemic patterns** matter more. ReasoningLens aggregates data across multiple conversations to build a **Systemic Profiling** of your model:
 
 1. **Aggregate:** Collect traces across diverse domains (Coding, Math, Logic).
 2. **Compress:** Distill recurring patterns into a compact memory state.
 3. **Report:** Generate a structured Markdown report highlighting the model's "Blind Spots" and "Consistent Strengths."
 
 <div align="center">
-<img src="assets/reasoning-profile.png" alt="Model Profiling" width="800"/>
+<img src="assets/systemic_profiling.png" alt="Hierarchical Visualization" width="800"/>
 </div>
 
+---
 
-## 🚀 Getting Started
+## Installation
 
 ### Prerequisites
 
-- **Python**: Version **3.11 or higher** (Required for backend services)
-- **Node.js**: Version **22.10 or higher** (Required for frontend development)
-- **Docker** & **Docker Compose** (For containerized deployment)
+- **Python 3.11+**
+- **Node.js 22.10+**
+- **Docker / Docker Compose** for containerized deployment
 
+---
 
-## 📦 Installation
+## Quick Start
 
-### Option 1: Conda Environment (Development)
+### Option 1: Local Development
 
-#### 1. Clone the Repository
-
-```bash
-git clone https://github.com/icip-cas/reasoning-lens.git
-cd reasoning-lens
-```
-
-#### 2. Backend Setup
+#### Clone the repository
 
 ```bash
-cd backend
+git clone https://github.com/icip-cas/ReasoningLens.git
+cd ReasoningLens
 
-# Create and activate conda environment
-conda create --name open-webui python=3.11
-conda activate open-webui
+### **Escape the "CoT Maze": Unmasking Model Reasoning at a Glance**
 
-# Install dependencies
-pip install -r requirements.txt -U
+![reasoninglens-github](assets/reasoninglens-github.png)
 
-# Start backend server
-sh dev.sh
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11+-green.svg)](https://www.python.org/)
+[![Node.js](https://img.shields.io/badge/node.js-22.10+-green.svg)](https://nodejs.org/)
+
+[**English**](#-reasoninglens) | [**🇨🇳 中文文档**](README_CN.md)
 ```
 
 The backend will be running at: `http://localhost:8080`
@@ -262,8 +257,7 @@ reasoning-lens/
 - **Database**: SQLite (default), PostgreSQL (optional)
 - **Containerization**: Docker, Docker Compose
 
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
