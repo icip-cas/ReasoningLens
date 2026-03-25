@@ -19,6 +19,8 @@
 
 > **TL;DR:** Long-form reasoning (CoT) is a double-edged sword. While models like OpenAI o1 and DeepSeek-R1 are smarter than ever, debugging a 10,000-token reasoning trace is a nightmare. **ReasoningLens** turns that "Wall of Text" into an interactive, hierarchical map.
 
+https://github.com/user-attachments/assets/3fa3f7ac-eba4-4bdf-8682-cc9528387d54
+
 ## 🤯 The Problem: When Transparency Becomes a Burden
 
 The era of **Large Reasoning Models (LRMs)** has arrived. We love their ability to self-correct and plan, but there's a catch: **Understanding *how* they reached a conclusion is getting harder.**
