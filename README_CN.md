@@ -33,9 +33,9 @@ ReasoningLens 基于 **[Open WebUI](https://github.com/open-webui/open-webui.git
 ---
 
 ## 系统概览
-![reasoninglens-github](assets/framework.png)
-
 REASONINGLENS 由三个核心模块组成：
+
+![reasoninglens-github](assets/framework.png)
 
 ### 1. 层级可视化（Hierarchical Visualization）
 

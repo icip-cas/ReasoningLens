@@ -35,10 +35,10 @@ Built on top of **[Open WebUI](https://github.com/open-webui/open-webui.git)**, 
 ---
 
 ## System Overview
+REASONINGLENS consists of three core components:
+
 ![reasoninglens-github](assets/framework.png)
 
-
-REASONINGLENS consists of three core components:
 
 ### 1. Hierarchical Visualization
 
